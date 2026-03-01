@@ -1,12 +1,18 @@
 from stockbot.saxo.client import SaxoClient
-from stockbot.saxo.instruments import search_instruments
+from stockbot.saxo.universe import build_filter_universe
 
 
 def main():
     client = SaxoClient()
-    # Search for an instrument
-    result = search_instruments(client, "Novo Nordisk")
-    print(result)
+    universe = build_filter_universe(client)
+    print(
+        {
+            "positions": len(universe["positions"]),
+            "watchlist": len(universe["watchlist"]),
+            "filter_universe": len(universe["filter_universe"]),
+        }
+    )
+
 
 if __name__ == "__main__":
     main()
