@@ -15,7 +15,21 @@ This collects:
 and stores a combined filter universe in:
 
 - `reports/filter_universe.json`
+
+## Portfolio summary CLI
+Run:
+
+```bash
+python -m stockbot.cli.portfolio_summary
+```
+
+Required Saxo environment variables:
+
+- `SAXO_ACCESS_TOKEN` (OAuth access token)
+- `SAXO_ENV` (`SIM` for simulation or `LIVE` for production)
+
+The command prints a holdings table with current prices when available. Missing prices are shown as `N/A` and logged.
+
 ## Scope
 This project is now scoped to Saxo positions + watchlists for filtering only.
 Legacy instrument-search and price-visualization helpers have been removed.
-
