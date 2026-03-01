@@ -17,9 +17,18 @@ and stores a combined filter universe in:
 - `reports/filter_universe.json`
 
 ## Portfolio summary CLI
-Run:
+Run from the project package directory (`StockAdvisor/` where `pyproject.toml` lives):
 
 ```bash
+cd StockAdvisor
+pip install -e .
+python -m stockbot.cli.portfolio_summary
+```
+
+Alternative (without editable install):
+
+```bash
+cd StockAdvisor/src
 python -m stockbot.cli.portfolio_summary
 ```
 
