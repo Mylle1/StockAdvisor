@@ -18,6 +18,11 @@ def main() -> None:
         action="store_true",
         help="Resolve missing tickers using FMP search endpoint",
     )
+    parser.add_argument(
+        "--debug-resolve",
+        action="store_true",
+        help="Print debug output from symbol resolver while resolving tickers",
+    )
     args = parser.parse_args()
 
     holdings = load_nordnet_holdings_from_report(args.report)
@@ -29,7 +34,11 @@ def main() -> None:
             raise ValueError("--resolve-tickers requires FMP_API_KEY to be set.")
 
         for holding in holdings:
-            ticker = resolve_ticker_by_name(holding["name"], api_key)
+            ticker = resolve_ticker_by_name(
+                holding["name"],
+                api_key,
+                debug=args.debug_resolve,
+            )
             if ticker:
                 holding["ticker"] = ticker
                 resolved_count += 1
