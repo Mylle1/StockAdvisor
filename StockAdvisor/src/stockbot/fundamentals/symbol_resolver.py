@@ -89,6 +89,18 @@ def resolve_ticker_by_name(
     currency: str | None = None,
     debug: bool = False,
 ) -> str | None:
+    def _search_candidates(search_query: str) -> list[dict]:
+        response = requests.get(
+            f"{BASE_URL}/search-symbol",
+            params={"query": search_query, "apikey": api_key},
+            timeout=10,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            return []
+        return payload
+
     if debug:
         print(f"[resolve] original_name={name!r}")
     query = normalize_company_name(name)
@@ -101,15 +113,45 @@ def resolve_ticker_by_name(
     if not api_key:
         raise ValueError("FMP API key is required")
 
-    response = requests.get(
-        f"{BASE_URL}/search-symbol",
-        params={"query": query, "apikey": api_key},
-        timeout=10,
-    )
-    response.raise_for_status()
+    payload = _search_candidates(query)
 
-    payload = response.json()
-    if not isinstance(payload, list) or not payload:
+    if not payload:
+        original_tokens = [token for token in name.strip().split() if token]
+        fallback_1_tokens = [
+            token for token in original_tokens if token.lower() not in _SHARE_CLASS_TOKENS
+        ]
+        fallback_1 = " ".join(fallback_1_tokens).strip()
+
+        fallback_queries: list[str] = []
+        if fallback_1 and fallback_1.lower() != query.lower():
+            fallback_queries.append(fallback_1)
+
+        if fallback_1_tokens:
+            fallback_2 = fallback_1_tokens[0].strip()
+            if fallback_2 and all(fallback_2.lower() != existing.lower() for existing in fallback_queries):
+                fallback_queries.append(fallback_2)
+
+        if fallback_1 and "inc" not in fallback_1.lower().split():
+            fallback_3 = f"{fallback_1} Inc"
+            if all(fallback_3.lower() != existing.lower() for existing in fallback_queries):
+                fallback_queries.append(fallback_3)
+
+        if debug and fallback_queries:
+            print(f"[resolve] fallback_queries={fallback_queries!r}")
+
+        selected_fallback_query: str | None = None
+        for fallback_query in fallback_queries:
+            if debug:
+                print(f"[resolve] trying_fallback_query={fallback_query!r}")
+            payload = _search_candidates(fallback_query)
+            if payload:
+                selected_fallback_query = fallback_query
+                break
+
+        if debug and selected_fallback_query:
+            print(f"[resolve] fallback_selected_query={selected_fallback_query!r}")
+
+    if not payload:
         if debug:
             print("[resolve] candidates=0")
             print("[resolve] selected=None reason=no_candidates")
