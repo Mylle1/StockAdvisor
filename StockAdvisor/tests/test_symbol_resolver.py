@@ -66,3 +66,25 @@ def test_resolve_ticker_by_name_returns_none_for_ambiguous_top_scores() -> None:
         mock_get.return_value = _mock_response(payload)
 
         assert resolve_ticker_by_name("Alpha Beta", api_key="demo") is None
+
+
+def test_resolve_ticker_by_name_normalizes_currency_input() -> None:
+    payload = [
+        {
+            "symbol": "ASML",
+            "name": "ASML Holding N.V.",
+            "exchangeShortName": "NASDAQ",
+            "currency": "USD",
+        },
+        {
+            "symbol": "ASML.AS",
+            "name": "ASML Holding N.V.",
+            "exchangeShortName": "AMS",
+            "currency": "EUR",
+        },
+    ]
+
+    with patch("stockbot.fundamentals.symbol_resolver.requests.get") as mock_get:
+        mock_get.return_value = _mock_response(payload)
+
+        assert resolve_ticker_by_name("ASML Holding", api_key="demo", currency=" eur ") == "ASML.AS"

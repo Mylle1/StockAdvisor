@@ -71,11 +71,20 @@ def _candidate_exchange(candidate: dict) -> str | None:
     return None
 
 
+def _normalize_currency_code(value: str | None) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    normalized = value.strip().upper()
+    if not normalized:
+        return None
+
+    return normalized
+
+
 def _candidate_currency(candidate: dict) -> str | None:
     candidate_currency = candidate.get("currency")
-    if isinstance(candidate_currency, str) and candidate_currency:
-        return candidate_currency.upper()
-    return None
+    return _normalize_currency_code(candidate_currency)
 
 
 def _is_otc_candidate(candidate: dict) -> bool:
@@ -111,6 +120,42 @@ def _search_candidates_by_symbol(search_query: str, api_key: str) -> list[dict]:
     if not isinstance(payload, list):
         return []
     return payload
+
+
+def _score_candidate(
+    candidate: dict,
+    query: str,
+    normalized_currency: str | None,
+) -> int | None:
+    symbol = _candidate_symbol(candidate)
+    candidate_name = _candidate_name(candidate)
+    if not symbol or not candidate_name:
+        return None
+
+    candidate_normalized = normalize_company_name(candidate_name)
+    if not candidate_normalized:
+        return None
+
+    if candidate_normalized == query:
+        score = 300
+    elif query in candidate_normalized:
+        score = 200
+    else:
+        score = 100
+
+    candidate_currency = _candidate_currency(candidate)
+    if normalized_currency and candidate_currency == normalized_currency:
+        score += 100
+
+    if normalized_currency:
+        preferred_exchanges = _CURRENCY_EXCHANGE_PRIORITY.get(normalized_currency, [])
+        if _candidate_exchange(candidate) in preferred_exchanges:
+            score += 50
+
+    if _is_otc_candidate(candidate):
+        score -= 100
+
+    return score
 
 
 def normalize_company_name(name: str) -> str:
@@ -196,47 +241,27 @@ def resolve_ticker_by_name(
                 f" currency={_candidate_currency(candidate)!r}"
             )
 
+    normalized_currency = _normalize_currency_code(currency)
+
     if len(payload) == 1:
-        symbol = _candidate_symbol(payload[0])
-        if symbol:
+        candidate = payload[0]
+        symbol = _candidate_symbol(candidate)
+        score = _score_candidate(candidate, query, normalized_currency)
+        if symbol and score is not None:
             if debug:
-                print("[resolve] selected=%r reason=single_candidate score=0" % symbol)
+                print("[resolve] selected=%r reason=single_candidate score=%s" % (symbol, score))
             return symbol
         if debug:
             print("[resolve] selected=None reason=single_candidate_missing_symbol")
         return None
 
     scored_candidates: list[tuple[int, str]] = []
-    normalized_currency = currency.upper() if isinstance(currency, str) and currency else None
 
     for candidate in payload:
         symbol = _candidate_symbol(candidate)
-        candidate_name = _candidate_name(candidate)
-        if not symbol or not candidate_name:
+        score = _score_candidate(candidate, query, normalized_currency)
+        if not symbol or score is None:
             continue
-
-        candidate_normalized = normalize_company_name(candidate_name)
-        if not candidate_normalized:
-            continue
-
-        if candidate_normalized == query:
-            score = 300
-        elif query in candidate_normalized:
-            score = 200
-        else:
-            score = 100
-
-        candidate_currency = _candidate_currency(candidate)
-        if normalized_currency and candidate_currency == normalized_currency:
-            score += 100
-
-        if normalized_currency:
-            preferred_exchanges = _CURRENCY_EXCHANGE_PRIORITY.get(normalized_currency, [])
-            if _candidate_exchange(candidate) in preferred_exchanges:
-                score += 50
-
-        if _is_otc_candidate(candidate):
-            score -= 100
 
         scored_candidates.append((score, symbol))
 
