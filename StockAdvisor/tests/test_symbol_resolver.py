@@ -43,6 +43,12 @@ def test_resolve_ticker_by_name_uses_currency_tiebreaker_for_asml() -> None:
             "currency": "EUR",
         },
         {
+            "symbol": "ASME.DE",
+            "name": "ASML Holding N.V.",
+            "exchangeShortName": "XETRA",
+            "currency": "EUR",
+        },
+        {
             "symbol": "ASMLF",
             "name": "ASML Holding N.V.",
             "exchangeShortName": "OTC",
