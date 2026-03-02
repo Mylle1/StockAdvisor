@@ -29,6 +29,7 @@ def test_load_nordnet_holdings_from_report_parses_utf16_tab_file(tmp_path: Path)
         "market_value_dkk": pytest.approx(6543.21),
         "ticker": None,
     }
+    assert holdings[1]["ticker"] is None
     assert holdings[1]["quantity"] == pytest.approx(3.5)
     assert holdings[1]["avg_price"] == pytest.approx(741.20)
     assert holdings[1]["current_price"] == pytest.approx(800.00)
@@ -58,29 +59,3 @@ def test_load_nordnet_holdings_from_report_normalizes_currency(tmp_path: Path) -
     holdings = load_nordnet_holdings_from_report(str(report_path))
 
     assert holdings[0]["currency"] == "EUR"
-
-
-def test_load_nordnet_holdings_from_report_infers_ticker_from_prefixed_name(tmp_path: Path) -> None:
-    report_content = (
-        "Navn\tValuta\tAntal\tGAK\tSeneste kurs\n"
-        "DUOL Duolingo A\tUSD\t5\t170,66\t97,09\n"
-    )
-    report_path = tmp_path / "ticker_prefix.tsv"
-    report_path.write_text(report_content, encoding="utf-16")
-
-    holdings = load_nordnet_holdings_from_report(str(report_path))
-
-    assert holdings[0]["ticker"] == "DUOL"
-
-
-def test_load_nordnet_holdings_from_report_infers_ticker_from_leading_uppercase_token(tmp_path: Path) -> None:
-    report_content = (
-        "Navn\tValuta\tAntal\tGAK\tSeneste kurs\n"
-        "ASML Holding\tUSD\t1\t836,88\t1407,81\n"
-    )
-    report_path = tmp_path / "ticker_missing.tsv"
-    report_path.write_text(report_content, encoding="utf-16")
-
-    holdings = load_nordnet_holdings_from_report(str(report_path))
-
-    assert holdings[0]["ticker"] == "ASML"

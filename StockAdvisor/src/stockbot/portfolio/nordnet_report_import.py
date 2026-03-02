@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import csv
-import re
 
 
 REQUIRED_COLUMNS = ["Navn", "Valuta", "Antal", "GAK", "Seneste kurs"]
 OPTIONAL_COLUMNS = ["Værdi DKK"]
-
-_LEADING_TICKER_PATTERN = re.compile(r"^([A-Z]{2,6})(?:\b|\.)")
 
 
 def _parse_danish_number(value: str, field_name: str) -> float:
@@ -36,14 +33,6 @@ def _parse_optional_danish_number(value: str | None, field_name: str) -> float |
     if not value.strip():
         return None
     return _parse_danish_number(value, field_name)
-
-
-def _infer_ticker_from_name(name: str) -> str | None:
-    match = _LEADING_TICKER_PATTERN.match(name.strip())
-    if not match:
-        return None
-
-    return match.group(1)
 
 
 def load_nordnet_holdings_from_report(path: str) -> list[dict]:
@@ -75,7 +64,7 @@ def load_nordnet_holdings_from_report(path: str) -> list[dict]:
                     "market_value_dkk": _parse_optional_danish_number(
                         row.get("Værdi DKK"), "Værdi DKK"
                     ),
-                    "ticker": _infer_ticker_from_name(name),
+                    "ticker": None,
                 }
             )
 
