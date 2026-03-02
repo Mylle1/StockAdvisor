@@ -36,6 +36,41 @@ _PUNCTUATION_TRANSLATION = str.maketrans({
     "-": " ",
 })
 
+_CURRENCY_EXCHANGE_PRIORITY: dict[str, list[str]] = {
+    "USD": ["NASDAQ", "NYSE"],
+    "EUR": ["AMS", "XETRA", "EPA", "BIT", "MAD"],
+    "DKK": ["CPH"],
+    "SEK": ["STO"],
+    "NOK": ["OSL"],
+    "GBP": ["LSE"],
+}
+
+
+def _is_otc_candidate(candidate: dict) -> bool:
+    exchange_values = [
+        candidate.get("exchange"),
+        candidate.get("exchangeShortName"),
+        candidate.get("stockExchange"),
+    ]
+    for value in exchange_values:
+        if isinstance(value, str) and "OTC" in value.upper():
+            return True
+    return False
+
+
+def _candidate_exchange(candidate: dict) -> str | None:
+    exchange = candidate.get("exchangeShortName")
+    if isinstance(exchange, str) and exchange:
+        return exchange.upper()
+    exchange = candidate.get("exchange")
+    if isinstance(exchange, str) and exchange:
+        return exchange.upper()
+    return None
+
+
+def _is_clean_symbol(symbol: str) -> bool:
+    return "." not in symbol and "-" not in symbol
+
 
 def normalize_company_name(name: str) -> str:
     cleaned = name.strip().lower().translate(_PUNCTUATION_TRANSLATION)
@@ -48,7 +83,12 @@ def normalize_company_name(name: str) -> str:
     return " ".join(normalized_tokens)
 
 
-def resolve_ticker_by_name(name: str, api_key: str, debug: bool = False) -> str | None:
+def resolve_ticker_by_name(
+    name: str,
+    api_key: str,
+    currency: str | None = None,
+    debug: bool = False,
+) -> str | None:
     if debug:
         print(f"[resolve] original_name={name!r}")
     query = normalize_company_name(name)
@@ -98,8 +138,8 @@ def resolve_ticker_by_name(name: str, api_key: str, debug: bool = False) -> str 
             print("[resolve] selected=None reason=single_candidate_missing_symbol")
         return None
 
-    exact_matches: list[str] = []
-    contains_matches: list[str] = []
+    scored_candidates: list[tuple[int, int, bool, str]] = []
+    normalized_currency = currency.upper() if isinstance(currency, str) and currency else None
 
     for candidate in payload:
         symbol = candidate.get("symbol")
@@ -114,27 +154,58 @@ def resolve_ticker_by_name(name: str, api_key: str, debug: bool = False) -> str 
             continue
 
         if candidate_normalized == query:
-            exact_matches.append(symbol)
+            base_score = 200
         elif query in candidate_normalized:
-            contains_matches.append(symbol)
+            base_score = 100
+        else:
+            continue
 
-    if len(exact_matches) == 1:
+        score = base_score
+
+        if normalized_currency:
+            candidate_currency = candidate.get("currency")
+            if isinstance(candidate_currency, str) and candidate_currency:
+                if candidate_currency.upper() == normalized_currency:
+                    score += 100
+            else:
+                exchange = _candidate_exchange(candidate)
+                preferred_exchanges = _CURRENCY_EXCHANGE_PRIORITY.get(normalized_currency, [])
+                if exchange in preferred_exchanges:
+                    score += 50
+
+        is_otc = _is_otc_candidate(candidate)
+        if is_otc:
+            score -= 100
+        if _is_clean_symbol(symbol):
+            score += 5
+
+        scored_candidates.append((score, base_score, is_otc, symbol))
+
+    if not scored_candidates:
         if debug:
-            print(f"[resolve] selected={exact_matches[0]!r} reason=exact")
-        return exact_matches[0]
-    if len(exact_matches) > 1:
-        if debug:
-            print("[resolve] selected=None reason=ambiguous_exact")
+            print("[resolve] selected=None reason=no_match")
         return None
-    if len(contains_matches) == 1:
+
+    if not normalized_currency:
+        max_base = max(item[1] for item in scored_candidates)
+        top_base_candidates = [item for item in scored_candidates if item[1] == max_base]
+        non_otc_top_base = [item for item in top_base_candidates if not item[2]]
+        comparable = non_otc_top_base or top_base_candidates
+        if len(comparable) > 1:
+            if debug:
+                print("[resolve] selected=None reason=ambiguous_without_currency")
+            return None
         if debug:
-            print(f"[resolve] selected={contains_matches[0]!r} reason=substring")
-        return contains_matches[0]
+            print(f"[resolve] selected={comparable[0][3]!r} reason=single_best_base_match")
+        return comparable[0][3]
+
+    scored_candidates.sort(key=lambda item: item[0], reverse=True)
+    top_score, _, _, top_symbol = scored_candidates[0]
+    if len(scored_candidates) > 1 and scored_candidates[1][0] == top_score:
+        if debug:
+            print("[resolve] selected=None reason=ambiguous_top_score")
+        return None
 
     if debug:
-        if len(contains_matches) > 1:
-            print("[resolve] selected=None reason=ambiguous_substring")
-        else:
-            print("[resolve] selected=None reason=no_match")
-
-    return None
+        print(f"[resolve] selected={top_symbol!r} reason=scored score={top_score}")
+    return top_symbol
