@@ -29,6 +29,7 @@ def test_resolve_ticker_by_name_returns_none_when_all_fallback_queries_have_no_c
             _mock_response([]),
             _mock_response([]),
             _mock_response([]),
+            _mock_response([]),
         ]
 
         assert resolve_ticker_by_name("Duolingo A", api_key="demo") is None
