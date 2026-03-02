@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     saxo_access_token: str = Field(..., env="SAXO_ACCESS_TOKEN")
     saxo_env: str = Field(..., env="SAXO_ENV")
+    fmp_api_key: str = Field(..., env="FMP_API_KEY")
 
     @property
     def saxo_base_url(self) -> str:

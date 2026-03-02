@@ -6,7 +6,7 @@ from stockbot.fundamentals.models import Fundamentals
 
 
 class FMPFundamentalsProvider:
-    BASE_URL = "https://financialmodelingprep.com/api/v3"
+    BASE_URL = "https://financialmodelingprep.com/stable"
 
     def __init__(self, api_key: str):
         if not api_key:
@@ -18,27 +18,26 @@ class FMPFundamentalsProvider:
         if not symbol:
             raise ValueError("Ticker is required")
 
-        income_statements = self._fetch_list(f"/income-statement/{symbol}", limit=5)
-        cashflow_statements = self._fetch_list(f"/cash-flow-statement/{symbol}", limit=1)
-        balance_sheets = self._fetch_list(f"/balance-sheet-statement/{symbol}", limit=1)
-        profiles = self._fetch_list(f"/profile/{symbol}")
+        income_statement = self._fetch_dict("/income-statement", symbol, limit=1)
+        cashflow_statement = self._fetch_dict("/cash-flow-statement", symbol, limit=1)
+        balance_sheet = self._fetch_dict("/balance-sheet-statement", symbol, limit=1)
 
-        latest_income = income_statements[0]
-        latest_cashflow = cashflow_statements[0]
-        latest_balance = balance_sheets[0]
-        profile = profiles[0]
+        revenue_last_year = self._require_number(income_statement, "revenue", symbol)
+        free_cash_flow = self._require_number(cashflow_statement, "freeCashFlow", symbol)
 
-        revenue_last_year = self._require_number(latest_income, "revenue", symbol)
-        free_cash_flow = self._require_number(latest_cashflow, "freeCashFlow", symbol)
+        total_debt = self._require_number(balance_sheet, "totalDebt", symbol)
+        cash = self._require_number(balance_sheet, "cashAndCashEquivalents", symbol)
 
-        total_debt = self._require_number(latest_balance, "totalDebt", symbol)
-        cash = self._require_number(latest_balance, "cashAndCashEquivalents", symbol)
-
-        shares_outstanding = self._require_number(profile, "sharesOutstanding", symbol)
+        # Use diluted shares outstanding from income statement
+        shares_outstanding = self._require_number(
+            income_statement, "weightedAverageShsOutDil", symbol
+        )
 
         net_debt = total_debt - cash
         fcf_margin = free_cash_flow / revenue_last_year
-        revenue_growth_5y = self._calculate_revenue_growth_5y(income_statements)
+        
+        # For 5-year growth, we need to fetch multiple years
+        revenue_growth_5y = self._calculate_revenue_growth_5y(symbol)
 
         return Fundamentals(
             ticker=symbol,
@@ -49,18 +48,28 @@ class FMPFundamentalsProvider:
             fcf_margin=fcf_margin,
         )
 
-    def _fetch_list(self, path: str, limit: int | None = None) -> list[dict]:
-        params: dict[str, str | int] = {"apikey": self.api_key}
+    def _fetch_dict(self, endpoint: str, symbol: str, limit: int | None = None) -> dict:
+        params: dict[str, str | int] = {
+            "symbol": symbol,
+            "apikey": self.api_key,
+        }
         if limit is not None:
             params["limit"] = limit
 
-        response = requests.get(f"{self.BASE_URL}{path}", params=params, timeout=10)
+        url = f"{self.BASE_URL}{endpoint}"
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
 
         payload = response.json()
-        if not isinstance(payload, list) or not payload:
-            ticker = path.rsplit("/", maxsplit=1)[-1]
-            raise ValueError(f"Ticker '{ticker}' not found in FMP.")
+        
+        # New stable API returns list, we want the first (most recent) item
+        if isinstance(payload, list):
+            if not payload:
+                raise ValueError(f"Ticker '{symbol}' not found in FMP.")
+            return payload[0]
+        
+        if not isinstance(payload, dict) or not payload:
+            raise ValueError(f"Ticker '{symbol}' not found in FMP.")
 
         return payload
 
@@ -71,20 +80,32 @@ class FMPFundamentalsProvider:
             raise ValueError(f"Missing required field '{field}' for ticker '{ticker}'.")
         return float(value)
 
-    @staticmethod
-    def _calculate_revenue_growth_5y(income_statements: list[dict]) -> float | None:
-        if len(income_statements) < 5:
-            return None
+    def _calculate_revenue_growth_5y(self, symbol: str) -> float | None:
+        """Calculate 5-year revenue CAGR. Returns None if insufficient data."""
+        try:
+            # Fetch last 5 years of annual income statements
+            url = f"{self.BASE_URL}/income-statement"
+            params = {"symbol": symbol, "apikey": self.api_key, "limit": 5}
+            response = requests.get(url, params=params, timeout=10)
+            
+            if not response.ok:
+                return None
+                
+            income_statements = response.json()
+            if not isinstance(income_statements, list) or len(income_statements) < 5:
+                return None
 
-        latest_revenue = income_statements[0].get("revenue")
-        oldest_revenue = income_statements[4].get("revenue")
-        if latest_revenue is None or oldest_revenue is None:
-            return None
+            latest_revenue = income_statements[0].get("revenue")
+            oldest_revenue = income_statements[4].get("revenue")
+            if latest_revenue is None or oldest_revenue is None:
+                return None
 
-        latest_revenue = float(latest_revenue)
-        oldest_revenue = float(oldest_revenue)
-        if oldest_revenue <= 0:
-            return None
+            latest_revenue = float(latest_revenue)
+            oldest_revenue = float(oldest_revenue)
+            if oldest_revenue <= 0:
+                return None
 
-        years = 4
-        return (latest_revenue / oldest_revenue) ** (1 / years) - 1
+            years = 4
+            return (latest_revenue / oldest_revenue) ** (1 / years) - 1
+        except Exception:
+            return None
