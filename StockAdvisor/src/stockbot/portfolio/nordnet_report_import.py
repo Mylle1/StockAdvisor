@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import csv
+import re
 
 
 REQUIRED_COLUMNS = ["Navn", "Valuta", "Antal", "GAK", "Seneste kurs"]
 OPTIONAL_COLUMNS = ["Værdi DKK"]
+
+_LEADING_TICKER_PATTERN = re.compile(r"^([A-Z]{2,6})(?:\b|\.)")
 
 
 def _parse_danish_number(value: str, field_name: str) -> float:
@@ -35,6 +38,14 @@ def _parse_optional_danish_number(value: str | None, field_name: str) -> float |
     return _parse_danish_number(value, field_name)
 
 
+def _infer_ticker_from_name(name: str) -> str | None:
+    match = _LEADING_TICKER_PATTERN.match(name.strip())
+    if not match:
+        return None
+
+    return match.group(1)
+
+
 def load_nordnet_holdings_from_report(path: str) -> list[dict]:
     with open(path, "r", encoding="utf-16", newline="") as report_file:
         reader = csv.DictReader(report_file, delimiter="\t")
@@ -50,10 +61,11 @@ def load_nordnet_holdings_from_report(path: str) -> list[dict]:
 
         holdings: list[dict] = []
         for row in reader:
+            name = row["Navn"]
             holdings.append(
                 {
                     "platform": "nordnet",
-                    "name": row["Navn"],
+                    "name": name,
                     "currency": row["Valuta"].strip().upper(),
                     "quantity": _parse_danish_number(row["Antal"], "Antal"),
                     "avg_price": _parse_danish_number(row["GAK"], "GAK"),
@@ -63,7 +75,7 @@ def load_nordnet_holdings_from_report(path: str) -> list[dict]:
                     "market_value_dkk": _parse_optional_danish_number(
                         row.get("Værdi DKK"), "Værdi DKK"
                     ),
-                    "ticker": None,
+                    "ticker": _infer_ticker_from_name(name),
                 }
             )
 
