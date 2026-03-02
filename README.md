@@ -42,3 +42,18 @@ The command prints a holdings table with current prices when available. Missing 
 ## Scope
 This project is now scoped to Saxo positions + watchlists for filtering only.
 Legacy instrument-search and price-visualization helpers have been removed.
+
+
+## FMP fundamentals provider (external API)
+Set your FMP API key as an environment variable:
+
+```bash
+export FMP_API_KEY="your_api_key_here"
+```
+
+CLI-style usage example:
+
+```bash
+cd StockAdvisor
+python -c "import os; from stockbot.fundamentals.fmp_provider import FMPFundamentalsProvider; f = FMPFundamentalsProvider(os.environ['FMP_API_KEY']).get_fundamentals('AAPL'); print(f)"
+```
