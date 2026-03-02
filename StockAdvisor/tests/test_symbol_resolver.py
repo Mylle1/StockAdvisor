@@ -33,7 +33,7 @@ def test_resolve_ticker_by_name_picks_best_substring_match() -> None:
 def test_resolve_ticker_by_name_returns_none_for_ambiguous_candidates() -> None:
     payload = [
         {"symbol": "ABC", "name": "Alpha Beta Corp"},
-        {"symbol": "ABD", "name": "Alpha Beta Dynamics"},
+        {"symbol": "ABD", "name": "Alpha Beta Limited"},
     ]
     with patch("stockbot.fundamentals.symbol_resolver.requests.get") as mock_get:
         mock_get.return_value = _mock_response(payload)
