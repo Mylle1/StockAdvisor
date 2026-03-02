@@ -45,3 +45,16 @@ def test_load_nordnet_holdings_from_report_raises_for_missing_columns(tmp_path: 
 
     with pytest.raises(ValueError, match="Missing required Nordnet report columns"):
         load_nordnet_holdings_from_report(str(report_path))
+
+
+def test_load_nordnet_holdings_from_report_normalizes_currency(tmp_path: Path) -> None:
+    report_content = (
+        "Navn\tValuta\tAntal\tGAK\tSeneste kurs\n"
+        "ASML Holding\t eur \t1\t100,00\t110,00\n"
+    )
+    report_path = tmp_path / "currency.tsv"
+    report_path.write_text(report_content, encoding="utf-16")
+
+    holdings = load_nordnet_holdings_from_report(str(report_path))
+
+    assert holdings[0]["currency"] == "EUR"

@@ -54,7 +54,7 @@ def load_nordnet_holdings_from_report(path: str) -> list[dict]:
                 {
                     "platform": "nordnet",
                     "name": row["Navn"],
-                    "currency": row["Valuta"],
+                    "currency": row["Valuta"].strip().upper(),
                     "quantity": _parse_danish_number(row["Antal"], "Antal"),
                     "avg_price": _parse_danish_number(row["GAK"], "GAK"),
                     "current_price": _parse_danish_number(
