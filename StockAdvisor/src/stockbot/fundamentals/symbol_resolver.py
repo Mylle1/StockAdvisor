@@ -46,30 +46,71 @@ _CURRENCY_EXCHANGE_PRIORITY: dict[str, list[str]] = {
 }
 
 
-def _is_otc_candidate(candidate: dict) -> bool:
-    exchange_values = [
-        candidate.get("exchange"),
-        candidate.get("exchangeShortName"),
-        candidate.get("stockExchange"),
-    ]
-    for value in exchange_values:
-        if isinstance(value, str) and "OTC" in value.upper():
-            return True
-    return False
+def _candidate_symbol(candidate: dict) -> str | None:
+    symbol = candidate.get("symbol") or candidate.get("ticker")
+    if isinstance(symbol, str) and symbol:
+        return symbol
+    return None
+
+
+def _candidate_name(candidate: dict) -> str | None:
+    name = candidate.get("name") or candidate.get("companyName")
+    if isinstance(name, str) and name:
+        return name
+    return None
 
 
 def _candidate_exchange(candidate: dict) -> str | None:
-    exchange = candidate.get("exchangeShortName")
-    if isinstance(exchange, str) and exchange:
-        return exchange.upper()
-    exchange = candidate.get("exchange")
+    exchange = (
+        candidate.get("exchange")
+        or candidate.get("exchangeShortName")
+        or candidate.get("stockExchange")
+    )
     if isinstance(exchange, str) and exchange:
         return exchange.upper()
     return None
 
 
+def _candidate_currency(candidate: dict) -> str | None:
+    candidate_currency = candidate.get("currency")
+    if isinstance(candidate_currency, str) and candidate_currency:
+        return candidate_currency.upper()
+    return None
+
+
+def _is_otc_candidate(candidate: dict) -> bool:
+    exchange = _candidate_exchange(candidate)
+    return isinstance(exchange, str) and "OTC" in exchange
+
+
 def _is_clean_symbol(symbol: str) -> bool:
     return "." not in symbol and "-" not in symbol
+
+
+def _search_candidates_by_name(search_query: str, api_key: str) -> list[dict]:
+    response = requests.get(
+        f"{BASE_URL}/search-name",
+        params={"query": search_query, "apikey": api_key, "limit": 10},
+        timeout=10,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, list):
+        return []
+    return payload
+
+
+def _search_candidates_by_symbol(search_query: str, api_key: str) -> list[dict]:
+    response = requests.get(
+        f"{BASE_URL}/search-symbol",
+        params={"query": search_query, "apikey": api_key},
+        timeout=10,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, list):
+        return []
+    return payload
 
 
 def normalize_company_name(name: str) -> str:
@@ -89,18 +130,6 @@ def resolve_ticker_by_name(
     currency: str | None = None,
     debug: bool = False,
 ) -> str | None:
-    def _search_candidates(search_query: str) -> list[dict]:
-        response = requests.get(
-            f"{BASE_URL}/search-symbol",
-            params={"query": search_query, "apikey": api_key},
-            timeout=10,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if not isinstance(payload, list):
-            return []
-        return payload
-
     if debug:
         print(f"[resolve] original_name={name!r}")
     query = normalize_company_name(name)
@@ -113,43 +142,42 @@ def resolve_ticker_by_name(
     if not api_key:
         raise ValueError("FMP API key is required")
 
-    payload = _search_candidates(query)
+    if debug:
+        print("[resolve] endpoint='search-name'")
+    payload = _search_candidates_by_name(query, api_key)
 
     if not payload:
-        original_tokens = [token for token in name.strip().split() if token]
-        fallback_1_tokens = [
-            token for token in original_tokens if token.lower() not in _SHARE_CLASS_TOKENS
-        ]
-        fallback_1 = " ".join(fallback_1_tokens).strip()
-
         fallback_queries: list[str] = []
-        if fallback_1 and fallback_1.lower() != query.lower():
-            fallback_queries.append(fallback_1)
+        original_tokens = [token for token in name.strip().split() if token]
+        first_part = " ".join(original_tokens[:-1]).strip() if len(original_tokens) > 1 else name.strip()
+        if first_part:
+            fallback_queries.append(first_part)
+            if "inc" not in first_part.lower().split():
+                fallback_queries.append(f"{first_part} Inc")
+            if "inc." not in first_part.lower().split():
+                fallback_queries.append(f"{first_part}, Inc.")
 
-        if fallback_1_tokens:
-            fallback_2 = fallback_1_tokens[0].strip()
-            if fallback_2 and all(fallback_2.lower() != existing.lower() for existing in fallback_queries):
-                fallback_queries.append(fallback_2)
-
-        if fallback_1 and "inc" not in fallback_1.lower().split():
-            fallback_3 = f"{fallback_1} Inc"
-            if all(fallback_3.lower() != existing.lower() for existing in fallback_queries):
-                fallback_queries.append(fallback_3)
-
-        if debug and fallback_queries:
-            print(f"[resolve] fallback_queries={fallback_queries!r}")
-
-        selected_fallback_query: str | None = None
+        deduped_fallbacks: list[str] = []
         for fallback_query in fallback_queries:
-            if debug:
-                print(f"[resolve] trying_fallback_query={fallback_query!r}")
-            payload = _search_candidates(fallback_query)
+            if fallback_query and all(fallback_query.lower() != existing.lower() for existing in deduped_fallbacks):
+                deduped_fallbacks.append(fallback_query)
+
+        if debug and deduped_fallbacks:
+            print(f"[resolve] fallback_queries={deduped_fallbacks!r}")
+
+        for fallback_query in deduped_fallbacks:
+            payload = _search_candidates_by_name(fallback_query, api_key)
             if payload:
-                selected_fallback_query = fallback_query
                 break
 
-        if debug and selected_fallback_query:
-            print(f"[resolve] fallback_selected_query={selected_fallback_query!r}")
+    if not payload:
+        first_word = query.split()[0] if query.split() else ""
+        symbol_query = first_word[:4].upper()
+        if symbol_query:
+            if debug:
+                print("[resolve] endpoint='search-symbol' fallback")
+                print(f"[resolve] symbol_fallback_query={symbol_query!r}")
+            payload = _search_candidates_by_symbol(symbol_query, api_key)
 
     if not payload:
         if debug:
@@ -160,35 +188,31 @@ def resolve_ticker_by_name(
     if debug:
         print(f"[resolve] candidates={len(payload)}")
         for candidate in payload[:5]:
-            symbol = candidate.get("symbol")
-            candidate_name = candidate.get("name")
-            exchange = candidate.get("exchange")
             print(
                 "[resolve] candidate"
-                f" symbol={symbol!r}"
-                f" name={candidate_name!r}"
-                f" exchange={exchange!r}"
+                f" symbol={_candidate_symbol(candidate)!r}"
+                f" name={_candidate_name(candidate)!r}"
+                f" exchange={_candidate_exchange(candidate)!r}"
+                f" currency={_candidate_currency(candidate)!r}"
             )
 
     if len(payload) == 1:
-        symbol = payload[0].get("symbol")
-        if isinstance(symbol, str) and symbol:
+        symbol = _candidate_symbol(payload[0])
+        if symbol:
             if debug:
-                print(f"[resolve] selected={symbol!r} reason=single_candidate")
+                print("[resolve] selected=%r reason=single_candidate score=0" % symbol)
             return symbol
         if debug:
             print("[resolve] selected=None reason=single_candidate_missing_symbol")
         return None
 
-    scored_candidates: list[tuple[int, int, bool, str]] = []
+    scored_candidates: list[tuple[int, str]] = []
     normalized_currency = currency.upper() if isinstance(currency, str) and currency else None
 
     for candidate in payload:
-        symbol = candidate.get("symbol")
-        candidate_name = candidate.get("name")
-        if not isinstance(symbol, str) or not symbol:
-            continue
-        if not isinstance(candidate_name, str):
+        symbol = _candidate_symbol(candidate)
+        candidate_name = _candidate_name(candidate)
+        if not symbol or not candidate_name:
             continue
 
         candidate_normalized = normalize_company_name(candidate_name)
@@ -196,58 +220,38 @@ def resolve_ticker_by_name(
             continue
 
         if candidate_normalized == query:
-            base_score = 200
+            score = 300
         elif query in candidate_normalized:
-            base_score = 100
+            score = 200
         else:
-            continue
+            score = 100
 
-        score = base_score
+        candidate_currency = _candidate_currency(candidate)
+        if normalized_currency and candidate_currency == normalized_currency:
+            score += 100
 
         if normalized_currency:
-            candidate_currency = candidate.get("currency")
-            if isinstance(candidate_currency, str) and candidate_currency:
-                if candidate_currency.upper() == normalized_currency:
-                    score += 100
-            else:
-                exchange = _candidate_exchange(candidate)
-                preferred_exchanges = _CURRENCY_EXCHANGE_PRIORITY.get(normalized_currency, [])
-                if exchange in preferred_exchanges:
-                    score += 50
+            preferred_exchanges = _CURRENCY_EXCHANGE_PRIORITY.get(normalized_currency, [])
+            if _candidate_exchange(candidate) in preferred_exchanges:
+                score += 50
 
-        is_otc = _is_otc_candidate(candidate)
-        if is_otc:
+        if _is_otc_candidate(candidate):
             score -= 100
-        if _is_clean_symbol(symbol):
-            score += 5
 
-        scored_candidates.append((score, base_score, is_otc, symbol))
+        scored_candidates.append((score, symbol))
 
     if not scored_candidates:
         if debug:
             print("[resolve] selected=None reason=no_match")
         return None
 
-    if not normalized_currency:
-        max_base = max(item[1] for item in scored_candidates)
-        top_base_candidates = [item for item in scored_candidates if item[1] == max_base]
-        non_otc_top_base = [item for item in top_base_candidates if not item[2]]
-        comparable = non_otc_top_base or top_base_candidates
-        if len(comparable) > 1:
-            if debug:
-                print("[resolve] selected=None reason=ambiguous_without_currency")
-            return None
-        if debug:
-            print(f"[resolve] selected={comparable[0][3]!r} reason=single_best_base_match")
-        return comparable[0][3]
-
     scored_candidates.sort(key=lambda item: item[0], reverse=True)
-    top_score, _, _, top_symbol = scored_candidates[0]
-    if len(scored_candidates) > 1 and scored_candidates[1][0] == top_score:
+    if len(scored_candidates) > 1 and scored_candidates[0][0] == scored_candidates[1][0]:
         if debug:
-            print("[resolve] selected=None reason=ambiguous_top_score")
+            print("[resolve] selected=None reason=ambiguous")
         return None
 
+    selected_score, selected_symbol = scored_candidates[0]
     if debug:
-        print(f"[resolve] selected={top_symbol!r} reason=scored score={top_score}")
-    return top_symbol
+        print(f"[resolve] selected={selected_symbol!r} reason=scored score={selected_score}")
+    return selected_symbol
