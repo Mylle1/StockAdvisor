@@ -83,8 +83,11 @@ def _normalize_currency_code(value: str | None) -> str | None:
 
 
 def _candidate_currency(candidate: dict) -> str | None:
-    candidate_currency = candidate.get("currency")
-    return _normalize_currency_code(candidate_currency)
+    for key in ("currency", "currencyCode", "reportedCurrency", "tradingCurrency"):
+        normalized = _normalize_currency_code(candidate.get(key))
+        if normalized:
+            return normalized
+    return None
 
 
 def _is_otc_candidate(candidate: dict) -> bool:

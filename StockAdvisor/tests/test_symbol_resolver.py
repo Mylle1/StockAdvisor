@@ -88,3 +88,25 @@ def test_resolve_ticker_by_name_normalizes_currency_input() -> None:
         mock_get.return_value = _mock_response(payload)
 
         assert resolve_ticker_by_name("ASML Holding", api_key="demo", currency=" eur ") == "ASML.AS"
+
+
+def test_resolve_ticker_by_name_uses_alternate_currency_fields_for_tiebreaker() -> None:
+    payload = [
+        {
+            "symbol": "ASML",
+            "name": "ASML Holding N.V.",
+            "exchangeShortName": "NASDAQ",
+            "currencyCode": "USD",
+        },
+        {
+            "symbol": "ASML.AS",
+            "name": "ASML Holding N.V.",
+            "exchangeShortName": "AMS",
+            "currencyCode": "EUR",
+        },
+    ]
+
+    with patch("stockbot.fundamentals.symbol_resolver.requests.get") as mock_get:
+        mock_get.return_value = _mock_response(payload)
+
+        assert resolve_ticker_by_name("ASML Holding", api_key="demo", currency="EUR") == "ASML.AS"
