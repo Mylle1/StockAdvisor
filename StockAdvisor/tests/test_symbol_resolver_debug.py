@@ -48,4 +48,4 @@ def test_debug_mode_does_not_change_result_for_no_match(capsys) -> None:
     assert "candidates=2" in output
     assert "candidate symbol='ABC'" in output
     assert "candidate symbol='ABD'" in output
-    assert "selected=None reason=ambiguous_exact" in output
+    assert "selected=None reason=ambiguous_without_currency" in output
