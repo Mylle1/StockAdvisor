@@ -37,7 +37,7 @@ def main() -> None:
             ticker = resolve_ticker_by_name(
                 holding["name"],
                 api_key,
-                currency=holding.get("currency"),
+                currency=holding["currency"],
                 debug=args.debug_resolve,
             )
             if ticker:

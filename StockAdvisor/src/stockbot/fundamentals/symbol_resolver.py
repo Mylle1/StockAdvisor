@@ -161,6 +161,32 @@ def _score_candidate(
     return score
 
 
+def _select_by_exchange_priority(candidates: list[dict], normalized_currency: str) -> dict | None:
+    priority_list = _CURRENCY_EXCHANGE_PRIORITY.get(normalized_currency, [])
+    if not priority_list:
+        return None
+
+    for priority_exchange in priority_list:
+        matches = [
+            candidate
+            for candidate in candidates
+            if _candidate_exchange(candidate) == priority_exchange
+        ]
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            return None
+
+    return None
+
+
+def _reject_otc_if_possible(candidates: list[dict]) -> list[dict]:
+    non_otc_candidates = [candidate for candidate in candidates if not _is_otc_candidate(candidate)]
+    if non_otc_candidates:
+        return non_otc_candidates
+    return candidates
+
+
 def normalize_company_name(name: str) -> str:
     cleaned = name.strip().lower().translate(_PUNCTUATION_TRANSLATION)
     tokens = [token for token in cleaned.split() if token]
@@ -257,6 +283,57 @@ def resolve_ticker_by_name(
         if debug:
             print("[resolve] selected=None reason=single_candidate_missing_symbol")
         return None
+
+    if debug:
+        print(f"[resolve] currency_argument={currency!r}")
+
+    if normalized_currency:
+        currency_filtered = [
+            candidate
+            for candidate in payload
+            if _candidate_currency(candidate) == normalized_currency
+        ]
+        if debug:
+            print(
+                "[resolve] currency_filter"
+                f" before={len(payload)}"
+                f" after={len(currency_filtered)}"
+            )
+
+        if len(currency_filtered) == 1:
+            selected_symbol = _candidate_symbol(currency_filtered[0])
+            if selected_symbol:
+                if debug:
+                    print("[resolve] selected=%r reason=currency_single_match" % (selected_symbol,))
+                return selected_symbol
+
+        if len(currency_filtered) > 1:
+            prioritized_candidate = _select_by_exchange_priority(currency_filtered, normalized_currency)
+            if debug:
+                used_rule = _CURRENCY_EXCHANGE_PRIORITY.get(normalized_currency, [])
+                print(
+                    "[resolve] exchange_priority_rule"
+                    f" currency={normalized_currency!r}"
+                    f" exchanges={used_rule!r}"
+                )
+            if prioritized_candidate:
+                selected_symbol = _candidate_symbol(prioritized_candidate)
+                if selected_symbol:
+                    if debug:
+                        print("[resolve] selected=%r reason=exchange_priority" % (selected_symbol,))
+                    return selected_symbol
+
+            non_otc_candidates = _reject_otc_if_possible(currency_filtered)
+            if len(non_otc_candidates) == 1:
+                selected_symbol = _candidate_symbol(non_otc_candidates[0])
+                if selected_symbol:
+                    if debug:
+                        print("[resolve] selected=%r reason=currency_non_otc" % (selected_symbol,))
+                    return selected_symbol
+
+            if debug:
+                print("[resolve] selected=None reason=ambiguous_currency_filtered")
+            return None
 
     scored_candidates: list[tuple[int, str]] = []
 
