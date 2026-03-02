@@ -10,3 +10,13 @@ class ReverseDCFResult:
     equity_value: float
     market_cap: float
     forecast_years: int
+
+
+@dataclass(slots=True)
+class DCFResult:
+    """Container for output from a forward two-stage FCFF DCF valuation."""
+
+    enterprise_value: float
+    equity_value: float
+    fair_value_per_share: float
+    upside_pct: float
