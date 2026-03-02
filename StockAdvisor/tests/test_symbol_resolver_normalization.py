@@ -39,3 +39,39 @@ def test_resolve_ticker_by_name_returns_none_for_ambiguous_weak_matches() -> Non
         mock_get.return_value = _mock_response(payload)
 
         assert resolve_ticker_by_name("Alpha Beta", api_key="demo") is None
+
+
+def test_resolve_ticker_by_name_prefers_currency_match_for_exact_candidates() -> None:
+    payload = [
+        {"symbol": "ASML", "name": "ASML Holding N.V.", "exchange": "NASDAQ", "currency": "USD"},
+        {"symbol": "ASML.AS", "name": "ASML Holding N.V.", "exchange": "AMS", "currency": "EUR"},
+        {"symbol": "ASMMF", "name": "ASML Holding N.V.", "exchange": "OTC", "currency": "USD"},
+    ]
+    with patch("stockbot.fundamentals.symbol_resolver.requests.get") as mock_get:
+        mock_get.return_value = _mock_response(payload)
+
+        assert resolve_ticker_by_name("ASML Holding", api_key="demo", currency="EUR") == "ASML.AS"
+
+
+def test_resolve_ticker_by_name_prefers_usd_currency_candidate() -> None:
+    payload = [
+        {"symbol": "ASML", "name": "ASML Holding N.V.", "exchange": "NASDAQ", "currency": "USD"},
+        {"symbol": "ASML.AS", "name": "ASML Holding N.V.", "exchange": "AMS", "currency": "EUR"},
+        {"symbol": "ASMMF", "name": "ASML Holding N.V.", "exchange": "OTC", "currency": "USD"},
+    ]
+    with patch("stockbot.fundamentals.symbol_resolver.requests.get") as mock_get:
+        mock_get.return_value = _mock_response(payload)
+
+        assert resolve_ticker_by_name("ASML Holding", api_key="demo", currency="USD") == "ASML"
+
+
+def test_resolve_ticker_by_name_returns_none_without_currency_for_ambiguous_exact() -> None:
+    payload = [
+        {"symbol": "ASML", "name": "ASML Holding N.V.", "exchange": "NASDAQ", "currency": "USD"},
+        {"symbol": "ASML.AS", "name": "ASML Holding N.V.", "exchange": "AMS", "currency": "EUR"},
+        {"symbol": "ASMMF", "name": "ASML Holding N.V.", "exchange": "OTC", "currency": "USD"},
+    ]
+    with patch("stockbot.fundamentals.symbol_resolver.requests.get") as mock_get:
+        mock_get.return_value = _mock_response(payload)
+
+        assert resolve_ticker_by_name("ASML Holding", api_key="demo") is None
