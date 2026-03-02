@@ -1,0 +1,16 @@
+{
+  "AAPL": {
+    "revenue_last_year": 1000,
+    "shares_outstanding": 100,
+    "net_debt": 0,
+    "revenue_growth_5y": 0.1,
+    "fcf_margin": 0.22
+  },
+  "MSFT": {
+    "revenue_last_year": 1200,
+    "shares_outstanding": 80,
+    "net_debt": 50,
+    "revenue_growth_5y": 0.12,
+    "fcf_margin": 0.3
+  }
+}
