@@ -1,69 +1,58 @@
 from __future__ import annotations
 
 import csv
+from typing import Any
+
+_REQUIRED_COLUMNS = [
+    "Navn",
+    "Valuta",
+    "Antal",
+    "GAK",
+    "Seneste kurs",
+    "Værdi",
+    "Værdi DKK",
+    "Ureal.afkast %",
+    "Afkast DKK",
+]
 
 
-REQUIRED_COLUMNS = ["Navn", "Valuta", "Antal", "GAK", "Seneste kurs"]
-OPTIONAL_COLUMNS = ["Værdi DKK"]
-
-
-def _parse_danish_number(value: str, field_name: str) -> float:
-    raw = value.strip()
-    if not raw:
-        raise ValueError(f"Field '{field_name}' is empty and cannot be parsed as a number.")
-
-    normalized = raw.replace("\xa0", "").replace(" ", "")
-
-    if "," in normalized:
-        normalized = normalized.replace(".", "").replace(",", ".")
-    else:
-        normalized = normalized.replace(",", "")
-
-    try:
-        return float(normalized)
-    except ValueError as exc:
-        raise ValueError(
-            f"Could not parse numeric value '{value}' for field '{field_name}'."
-        ) from exc
-
-
-def _parse_optional_danish_number(value: str | None, field_name: str) -> float | None:
+def _parse_danish_float(value: str | None) -> float | None:
     if value is None:
         return None
-    if not value.strip():
+
+    cleaned = value.strip()
+    if not cleaned:
         return None
-    return _parse_danish_number(value, field_name)
+
+    # Handle common Danish formatting, e.g. "1.234,56" and "1 234,56".
+    cleaned = cleaned.replace(" ", "").replace(".", "").replace(",", ".")
+    return float(cleaned)
 
 
-def load_nordnet_holdings_from_report(path: str) -> list[dict]:
+def load_nordnet_holdings_from_report(path: str) -> list[dict[str, Any]]:
     with open(path, "r", encoding="utf-16", newline="") as report_file:
         reader = csv.DictReader(report_file, delimiter="\t")
-
-        if reader.fieldnames is None:
-            raise ValueError("Nordnet report appears empty or missing header row.")
-
-        missing_required = [col for col in REQUIRED_COLUMNS if col not in reader.fieldnames]
-        if missing_required:
+        fieldnames = reader.fieldnames or []
+        missing_columns = [column for column in _REQUIRED_COLUMNS if column not in fieldnames]
+        if missing_columns:
             raise ValueError(
-                "Missing required Nordnet report columns: " + ", ".join(missing_required)
+                "Nordnet report is missing required columns: " + ", ".join(missing_columns)
             )
 
-        holdings: list[dict] = []
+        holdings: list[dict[str, Any]] = []
         for row in reader:
-            name = row["Navn"]
             holdings.append(
                 {
                     "platform": "nordnet",
-                    "name": name,
-                    "currency": row["Valuta"].strip().upper(),
-                    "quantity": _parse_danish_number(row["Antal"], "Antal"),
-                    "avg_price": _parse_danish_number(row["GAK"], "GAK"),
-                    "current_price": _parse_danish_number(
-                        row["Seneste kurs"], "Seneste kurs"
-                    ),
-                    "market_value_dkk": _parse_optional_danish_number(
-                        row.get("Værdi DKK"), "Værdi DKK"
-                    ),
+                    "name": (row.get("Navn") or "").strip(),
+                    "currency": (row.get("Valuta") or "").strip(),
+                    "quantity": _parse_danish_float(row.get("Antal")),
+                    "avg_price": _parse_danish_float(row.get("GAK")),
+                    "current_price": _parse_danish_float(row.get("Seneste kurs")),
+                    "market_value": _parse_danish_float(row.get("Værdi")),
+                    "market_value_dkk": _parse_danish_float(row.get("Værdi DKK")),
+                    "gain_pct": _parse_danish_float(row.get("Ureal.afkast %")),
+                    "gain_dkk": _parse_danish_float(row.get("Afkast DKK")),
                     "ticker": None,
                 }
             )
