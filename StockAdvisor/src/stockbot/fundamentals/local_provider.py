@@ -17,6 +17,7 @@ def load_fundamentals_from_json(path: str) -> dict[str, Fundamentals]:
             shares_outstanding=payload["shares_outstanding"],
             net_debt=payload.get("net_debt", 0.0),
             revenue_growth_5y=payload.get("revenue_growth_5y"),
+            revenue_growth_years_used=payload.get("revenue_growth_years_used"),
             fcf_margin=payload.get("fcf_margin"),
         )
 
