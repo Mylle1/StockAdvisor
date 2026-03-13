@@ -1,4 +1,4 @@
-from stockbot.valuation.model_selector import estimate_wacc, select_valuation_model
+from stockbot.valuation.model_selector import estimate_terminal_growth, estimate_wacc, select_valuation_model
 
 
 def test_selects_reverse_dcf_for_high_revenue_growth() -> None:
@@ -39,3 +39,15 @@ def test_estimate_wacc_at_or_above_low_growth_bucket() -> None:
 
 def test_estimate_wacc_for_very_low_growth() -> None:
     assert estimate_wacc(0.01) == 0.08
+
+
+def test_estimate_terminal_growth_for_developed_market() -> None:
+    assert estimate_terminal_growth("Germany") == 0.025
+
+
+def test_estimate_terminal_growth_for_other_market() -> None:
+    assert estimate_terminal_growth("India") == 0.035
+
+
+def test_estimate_terminal_growth_for_missing_country() -> None:
+    assert estimate_terminal_growth(None) == 0.035

@@ -1,5 +1,28 @@
 from typing import Literal
 
+DEVELOPED_MARKETS = [
+    "Austria",
+    "Belgium",
+    "Canada",
+    "Denmark",
+    "Finland",
+    "France",
+    "Germany",
+    "Iceland",
+    "Ireland",
+    "Italy",
+    "Japan",
+    "Luxembourg",
+    "Netherlands",
+    "Norway",
+    "Portugal",
+    "Spain",
+    "Sweden",
+    "Switzerland",
+    "United Kingdom",
+    "United States",
+]
+
 
 def select_valuation_model(
     revenue_growth_5y: float | None,
@@ -29,3 +52,9 @@ def estimate_wacc(revenue_growth_5y: float) -> float:
     if revenue_growth_5y >= 0.05:
         return 0.095
     return 0.08
+
+
+def estimate_terminal_growth(country: str | None) -> float:
+    if country in DEVELOPED_MARKETS:
+        return 0.025
+    return 0.035

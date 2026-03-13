@@ -62,6 +62,7 @@ def test_get_fundamentals_maps_yfinance_data_with_5_year_growth(monkeypatch: pyt
     assert fundamentals.shares_outstanding == 1000.0
     assert fundamentals.net_debt == 40.0
     assert fundamentals.fcf_margin == pytest.approx(0.15)
+    assert fundamentals.country is None
     assert fundamentals.revenue_growth_5y == pytest.approx((200.0 / 120.0) ** (1 / 4) - 1)
     assert fundamentals.revenue_growth_years_used == 5
 
@@ -159,3 +160,14 @@ def test_get_fundamentals_raises_for_missing_free_cash_flow(monkeypatch: pytest.
 
     with pytest.raises(ValueError, match="Missing free cash flow for ticker 'NVDA'"):
         provider.get_fundamentals("NVDA")
+
+
+def test_get_fundamentals_maps_country_from_info(monkeypatch: pytest.MonkeyPatch) -> None:
+    provider = YahooFundamentalsProvider()
+    fake_ticker = _build_ticker([200.0, 180.0, 160.0])
+    fake_ticker.info["country"] = "United States"
+    monkeypatch.setattr("stockbot.fundamentals.yfinance_provider.yf.Ticker", lambda ticker: fake_ticker)
+
+    fundamentals = provider.get_fundamentals("AAPL")
+
+    assert fundamentals.country == "United States"

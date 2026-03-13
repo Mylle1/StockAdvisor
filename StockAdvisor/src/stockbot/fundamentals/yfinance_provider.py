@@ -62,6 +62,7 @@ class YahooFundamentalsProvider:
             revenue_growth_5y=revenue_growth_5y,
             revenue_growth_years_used=revenue_growth_years_used,
             fcf_margin=float(free_cash_flow) / float(revenue_last_year),
+            country=info.get("country"),
         )
 
     def _extract_latest_numeric_value(self, frame: object, labels: Iterable[str]) -> float | None:
