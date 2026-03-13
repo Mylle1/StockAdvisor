@@ -47,7 +47,7 @@ def test_valuate_stock_selects_reverse_dcf_and_returns_required_fields() -> None
         revenue_last_year=1000,
         shares_outstanding=100,
         net_debt=0,
-        revenue_growth_5y=0.25,
+        revenue_growth_5y=0.30,
         fcf_margin=0.1,
     )
 
@@ -70,7 +70,7 @@ def test_valuate_stock_model_override_is_respected() -> None:
         revenue_last_year=1000,
         shares_outstanding=100,
         net_debt=0,
-        revenue_growth_5y=0.25,
+        revenue_growth_5y=0.30,
         fcf_margin=0.2,
     )
 
@@ -85,3 +85,32 @@ def test_valuate_stock_model_override_is_respected() -> None:
 
     assert result["model_used"] == "dcf"
     assert "fair_value_per_share" in result
+
+
+def test_valuate_stock_estimates_wacc_for_dcf_path(monkeypatch) -> None:
+    captured: dict[str, float] = {}
+
+    def fake_two_stage_dcf(**kwargs):
+        captured["wacc"] = kwargs["wacc"]
+        return {"fair_value_per_share": 200.0, "upside_pct": 0.1}
+
+    monkeypatch.setattr("stockbot.valuation.service.two_stage_dcf", fake_two_stage_dcf)
+
+    fundamentals = Fundamentals(
+        ticker="ORCL",
+        revenue_last_year=1000,
+        shares_outstanding=100,
+        net_debt=0,
+        revenue_growth_5y=0.16,
+        fcf_margin=0.2,
+    )
+
+    valuate_stock(
+        ticker="ORCL",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params=DCF_PARAMS,
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+    )
+
+    assert captured["wacc"] == 0.11

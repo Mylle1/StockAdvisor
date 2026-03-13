@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from stockbot.fundamentals.models import Fundamentals
 from stockbot.valuation.dcf import two_stage_dcf
-from stockbot.valuation.model_selector import select_valuation_model
+from stockbot.valuation.model_selector import estimate_wacc, select_valuation_model
 from stockbot.valuation.reverse_dcf import reverse_dcf_implied_growth
 
 
@@ -25,7 +25,7 @@ def valuate_stock(
             revenue_last_year=fundamentals.revenue_last_year,
             revenue_growth=dcf_params["revenue_growth"],
             target_fcf_margin=dcf_params["target_fcf_margin"],
-            wacc=dcf_params["wacc"],
+            wacc=estimate_wacc(fundamentals.revenue_growth_5y or 0.0),
             terminal_growth=dcf_params["terminal_growth"],
             forecast_years=dcf_params.get("forecast_years", 10),
             net_debt=fundamentals.net_debt,
