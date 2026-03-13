@@ -114,3 +114,63 @@ def test_valuate_stock_estimates_wacc_for_dcf_path(monkeypatch) -> None:
     )
 
     assert captured["wacc"] == 0.11
+
+
+def test_valuate_stock_estimates_terminal_growth_from_country_for_dcf(monkeypatch) -> None:
+    captured: dict[str, float] = {}
+
+    def fake_two_stage_dcf(**kwargs):
+        captured["terminal_growth"] = kwargs["terminal_growth"]
+        return {"fair_value_per_share": 200.0, "upside_pct": 0.1}
+
+    monkeypatch.setattr("stockbot.valuation.service.two_stage_dcf", fake_two_stage_dcf)
+
+    fundamentals = Fundamentals(
+        ticker="INFY",
+        revenue_last_year=1000,
+        shares_outstanding=100,
+        country="India",
+        net_debt=0,
+        revenue_growth_5y=0.10,
+        fcf_margin=0.2,
+    )
+
+    valuate_stock(
+        ticker="INFY",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params=DCF_PARAMS,
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+    )
+
+    assert captured["terminal_growth"] == 0.035
+
+
+def test_valuate_stock_estimates_terminal_growth_from_country_for_reverse_dcf(monkeypatch) -> None:
+    captured: dict[str, float] = {}
+
+    def fake_reverse_dcf_implied_growth(**kwargs):
+        captured["terminal_growth"] = kwargs["terminal_growth"]
+        return {"implied_revenue_growth": 0.2}
+
+    monkeypatch.setattr("stockbot.valuation.service.reverse_dcf_implied_growth", fake_reverse_dcf_implied_growth)
+
+    fundamentals = Fundamentals(
+        ticker="SAP",
+        revenue_last_year=1000,
+        shares_outstanding=100,
+        country="Germany",
+        net_debt=0,
+        revenue_growth_5y=0.30,
+        fcf_margin=0.1,
+    )
+
+    valuate_stock(
+        ticker="SAP",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params=DCF_PARAMS,
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+    )
+
+    assert captured["terminal_growth"] == 0.025

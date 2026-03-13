@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from stockbot.fundamentals.models import Fundamentals
 from stockbot.valuation.dcf import two_stage_dcf
-from stockbot.valuation.model_selector import estimate_wacc, select_valuation_model
+from stockbot.valuation.model_selector import estimate_terminal_growth, estimate_wacc, select_valuation_model
 from stockbot.valuation.reverse_dcf import reverse_dcf_implied_growth
 
 
@@ -19,6 +19,8 @@ def valuate_stock(
         fundamentals.fcf_margin,
     )
 
+    terminal_growth = estimate_terminal_growth(fundamentals.country)
+
     if model_used == "dcf":
         dcf_result = two_stage_dcf(
             current_price=current_price,
@@ -26,7 +28,7 @@ def valuate_stock(
             revenue_growth=dcf_params["revenue_growth"],
             target_fcf_margin=dcf_params["target_fcf_margin"],
             wacc=estimate_wacc(fundamentals.revenue_growth_5y or 0.0),
-            terminal_growth=dcf_params["terminal_growth"],
+            terminal_growth=terminal_growth,
             forecast_years=dcf_params.get("forecast_years", 10),
             net_debt=fundamentals.net_debt,
             shares_outstanding=fundamentals.shares_outstanding,
@@ -46,7 +48,7 @@ def valuate_stock(
             revenue_last_year=fundamentals.revenue_last_year,
             target_fcf_margin=reverse_dcf_params["target_fcf_margin"],
             wacc=reverse_dcf_params["wacc"],
-            terminal_growth=reverse_dcf_params["terminal_growth"],
+            terminal_growth=terminal_growth,
             forecast_years=reverse_dcf_params.get("forecast_years", 10),
             net_debt=fundamentals.net_debt,
         )
