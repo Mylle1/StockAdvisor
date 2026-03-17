@@ -10,4 +10,6 @@ class Fundamentals:
     shares_outstanding: float
     net_debt: float = 0.0
     revenue_growth_5y: float | None = None
+    revenue_growth_years_used: int | None = None
     fcf_margin: float | None = None
+    country: str | None = None
