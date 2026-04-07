@@ -101,13 +101,13 @@ def run_valuation_pipeline(current_price: float, fundamentals: dict, dcf_params:
 
 ## Valuation CLI usage (prices loaded from holdings JSON)
 
-```bash
-cd StockAdvisor
-python -m stockbot.cli.valuate \
-  --fundamentals data/fundamentals.json \
-  --holdings reports/nordnet_holdings_mapped.json \
-  --target-fcf-margin 0.2 \
-  --forecast-years 10 \
+```powershell
+Set-Location StockAdvisor
+python -m stockbot.cli.valuate `
+  --fundamentals data/fundamentals.json `
+  --holdings reports/nordnet_holdings_mapped.json `
+  --target-fcf-margin 0.2 `
+  --forecast-years 10 `
   --tickers AAPL,MSFT,NVO
 ```
 
