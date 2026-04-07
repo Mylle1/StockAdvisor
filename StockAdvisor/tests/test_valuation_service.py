@@ -1,3 +1,5 @@
+import pytest
+
 from stockbot.fundamentals.models import Fundamentals
 from stockbot.valuation.service import valuate_stock
 
@@ -172,3 +174,92 @@ def test_valuate_stock_estimates_terminal_growth_from_country_for_reverse_dcf(mo
 
     assert captured["terminal_growth"] == 0.025
 
+
+def test_valuate_stock_blends_quarterly_and_historical_growth_for_dcf(monkeypatch) -> None:
+    captured: dict[str, float] = {}
+
+    def fake_two_stage_dcf(**kwargs):
+        captured["revenue_growth"] = kwargs["revenue_growth"]
+        return {"fair_value_per_share": 200.0, "upside_pct": 0.1}
+
+    monkeypatch.setattr("stockbot.valuation.service.two_stage_dcf", fake_two_stage_dcf)
+
+    fundamentals = Fundamentals(
+        ticker="NOW",
+        revenue_last_year=1000,
+        shares_outstanding=100,
+        net_debt=0,
+        revenue_growth_5y=0.10,
+        recent_quarterly_yoy_revenue_growth=0.20,
+        fcf_margin=0.2,
+    )
+
+    valuate_stock(
+        ticker="NOW",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params=DCF_PARAMS,
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+    )
+
+    assert captured["revenue_growth"] == pytest.approx(0.14)
+
+
+def test_valuate_stock_uses_available_revenue_growth_input_for_dcf(monkeypatch) -> None:
+    captured: dict[str, float] = {}
+
+    def fake_two_stage_dcf(**kwargs):
+        captured["revenue_growth"] = kwargs["revenue_growth"]
+        return {"fair_value_per_share": 200.0, "upside_pct": 0.1}
+
+    monkeypatch.setattr("stockbot.valuation.service.two_stage_dcf", fake_two_stage_dcf)
+
+    fundamentals = Fundamentals(
+        ticker="CRM",
+        revenue_last_year=1000,
+        shares_outstanding=100,
+        net_debt=0,
+        revenue_growth_5y=None,
+        recent_quarterly_yoy_revenue_growth=0.22,
+        fcf_margin=0.2,
+    )
+
+    valuate_stock(
+        ticker="CRM",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params=DCF_PARAMS,
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+    )
+
+    assert captured["revenue_growth"] == pytest.approx(0.22)
+
+
+def test_valuate_stock_defaults_revenue_growth_for_dcf_when_missing(monkeypatch) -> None:
+    captured: dict[str, float] = {}
+
+    def fake_two_stage_dcf(**kwargs):
+        captured["revenue_growth"] = kwargs["revenue_growth"]
+        return {"fair_value_per_share": 200.0, "upside_pct": 0.1}
+
+    monkeypatch.setattr("stockbot.valuation.service.two_stage_dcf", fake_two_stage_dcf)
+
+    fundamentals = Fundamentals(
+        ticker="IBM",
+        revenue_last_year=1000,
+        shares_outstanding=100,
+        net_debt=0,
+        revenue_growth_5y=None,
+        recent_quarterly_yoy_revenue_growth=None,
+        fcf_margin=0.2,
+    )
+
+    valuate_stock(
+        ticker="IBM",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params=DCF_PARAMS,
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+    )
+
+    assert captured["revenue_growth"] == pytest.approx(0.05)

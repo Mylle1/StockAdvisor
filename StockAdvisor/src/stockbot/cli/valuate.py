@@ -88,10 +88,7 @@ def main() -> None:
             continue
 
         revenue_growth = fundamentals.revenue_growth_5y or 0.0
-        dcf_params_for_ticker = {
-            **dcf_params,
-            "revenue_growth": revenue_growth,
-        }
+        dcf_params_for_ticker = {**dcf_params}
         reverse_dcf_params_for_ticker = {
             **reverse_dcf_params,
             "wacc": estimate_wacc(revenue_growth),

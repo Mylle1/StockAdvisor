@@ -34,17 +34,33 @@ class FakeFrame:
 
 
 class FakeTicker:
-    def __init__(self, *, financials: FakeFrame | None, balance_sheet: FakeFrame | None, cashflow: FakeFrame | None, info: dict):
+    def __init__(
+        self,
+        *,
+        financials: FakeFrame | None,
+        quarterly_financials: FakeFrame | None,
+        balance_sheet: FakeFrame | None,
+        cashflow: FakeFrame | None,
+        info: dict,
+    ):
         self.financials = financials
         self.income_stmt = financials
+        self.quarterly_financials = quarterly_financials
+        self.quarterly_income_stmt = quarterly_financials
         self.balance_sheet = balance_sheet
         self.cashflow = cashflow
         self.info = info
 
 
-def _build_ticker(revenues: list[float | None], *, revenue_label: str = "Total Revenue") -> FakeTicker:
+def _build_ticker(
+    revenues: list[float | None],
+    *,
+    quarterly_revenues: list[float | None] | None = None,
+    revenue_label: str = "Total Revenue",
+) -> FakeTicker:
     return FakeTicker(
         financials=FakeFrame({revenue_label: revenues}),
+        quarterly_financials=FakeFrame({revenue_label: quarterly_revenues or []}),
         balance_sheet=FakeFrame({"Total Debt": [50.0], "Cash And Cash Equivalents": [10.0]}),
         cashflow=FakeFrame({"Free Cash Flow": [30.0]}),
         info={"sharesOutstanding": 1000},
@@ -53,7 +69,13 @@ def _build_ticker(revenues: list[float | None], *, revenue_label: str = "Total R
 
 def test_get_fundamentals_maps_yfinance_data_with_5_year_growth(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = YahooFundamentalsProvider()
-    monkeypatch.setattr("stockbot.fundamentals.yfinance_provider.yf.Ticker", lambda ticker: _build_ticker([200.0, 180.0, 160.0, 140.0, 120.0]))
+    monkeypatch.setattr(
+        "stockbot.fundamentals.yfinance_provider.yf.Ticker",
+        lambda ticker: _build_ticker(
+            [200.0, 180.0, 160.0, 140.0, 120.0],
+            quarterly_revenues=[60.0, 57.0, 54.0, 51.0, 48.0],
+        ),
+    )
 
     fundamentals = provider.get_fundamentals(" asml ")
 
@@ -64,6 +86,7 @@ def test_get_fundamentals_maps_yfinance_data_with_5_year_growth(monkeypatch: pyt
     assert fundamentals.fcf_margin == pytest.approx(0.15)
     assert fundamentals.country is None
     assert fundamentals.revenue_growth_5y == pytest.approx((200.0 / 120.0) ** (1 / 4) - 1)
+    assert fundamentals.recent_quarterly_yoy_revenue_growth == pytest.approx((60.0 / 48.0) - 1)
     assert fundamentals.revenue_growth_years_used == 5
 
 
@@ -124,6 +147,7 @@ def test_get_fundamentals_raises_for_missing_revenue(monkeypatch: pytest.MonkeyP
     provider = YahooFundamentalsProvider()
     fake_ticker = FakeTicker(
         financials=FakeFrame({}),
+        quarterly_financials=FakeFrame({}),
         balance_sheet=FakeFrame({"Total Debt": [10.0], "Cash And Cash Equivalents": [2.0]}),
         cashflow=FakeFrame({"Free Cash Flow": [3.0]}),
         info={"sharesOutstanding": 100},
@@ -138,6 +162,7 @@ def test_get_fundamentals_raises_for_missing_shares_outstanding(monkeypatch: pyt
     provider = YahooFundamentalsProvider()
     fake_ticker = FakeTicker(
         financials=FakeFrame({"Total Revenue": [100.0]}),
+        quarterly_financials=FakeFrame({}),
         balance_sheet=FakeFrame({"Total Debt": [10.0], "Cash And Cash Equivalents": [2.0]}),
         cashflow=FakeFrame({"Free Cash Flow": [3.0]}),
         info={},
@@ -152,6 +177,7 @@ def test_get_fundamentals_raises_for_missing_free_cash_flow(monkeypatch: pytest.
     provider = YahooFundamentalsProvider()
     fake_ticker = FakeTicker(
         financials=FakeFrame({"Total Revenue": [100.0]}),
+        quarterly_financials=FakeFrame({}),
         balance_sheet=FakeFrame({"Total Debt": [10.0], "Cash And Cash Equivalents": [2.0]}),
         cashflow=FakeFrame({}),
         info={"sharesOutstanding": 100},
@@ -171,3 +197,17 @@ def test_get_fundamentals_maps_country_from_info(monkeypatch: pytest.MonkeyPatch
     fundamentals = provider.get_fundamentals("AAPL")
 
     assert fundamentals.country == "United States"
+
+
+def test_get_fundamentals_returns_none_for_recent_quarterly_yoy_growth_with_insufficient_data(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = YahooFundamentalsProvider()
+    monkeypatch.setattr(
+        "stockbot.fundamentals.yfinance_provider.yf.Ticker",
+        lambda ticker: _build_ticker([200.0, 180.0, 160.0], quarterly_revenues=[52.0, 50.0, 49.0, 48.0]),
+    )
+
+    fundamentals = provider.get_fundamentals("AAPL")
+
+    assert fundamentals.recent_quarterly_yoy_revenue_growth is None

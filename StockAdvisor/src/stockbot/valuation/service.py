@@ -6,6 +6,19 @@ from stockbot.valuation.model_selector import estimate_terminal_growth, estimate
 from stockbot.valuation.reverse_dcf import reverse_dcf_implied_growth
 
 
+def estimate_dcf_revenue_growth(fundamentals: Fundamentals) -> float:
+    quarterly_yoy_growth = fundamentals.recent_quarterly_yoy_revenue_growth
+    historical_growth = fundamentals.revenue_growth_5y
+
+    if quarterly_yoy_growth is not None and historical_growth is not None:
+        return (0.4 * quarterly_yoy_growth) + (0.6 * historical_growth)
+    if quarterly_yoy_growth is not None:
+        return quarterly_yoy_growth
+    if historical_growth is not None:
+        return historical_growth
+    return 0.05
+
+
 def valuate_stock(
     ticker: str,
     current_price: float,
@@ -20,10 +33,11 @@ def valuate_stock(
     )
 
     if model_used == "dcf":
+        dcf_revenue_growth = estimate_dcf_revenue_growth(fundamentals)
         dcf_result = two_stage_dcf(
             current_price=current_price,
             revenue_last_year=fundamentals.revenue_last_year,
-            revenue_growth=dcf_params["revenue_growth"],
+            revenue_growth=dcf_revenue_growth,
             target_fcf_margin=dcf_params["target_fcf_margin"],
             wacc=estimate_wacc(fundamentals.revenue_growth_5y or 0.0),
             terminal_growth=estimate_terminal_growth(fundamentals.country),

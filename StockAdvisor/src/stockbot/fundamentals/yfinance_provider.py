@@ -20,11 +20,14 @@ class YahooFundamentalsProvider:
 
         financials = getattr(ticker_obj, "financials", None)
         income_stmt = getattr(ticker_obj, "income_stmt", None)
+        quarterly_financials = getattr(ticker_obj, "quarterly_financials", None)
+        quarterly_income_stmt = getattr(ticker_obj, "quarterly_income_stmt", None)
         balance_sheet = getattr(ticker_obj, "balance_sheet", None)
         cashflow = getattr(ticker_obj, "cashflow", None)
         info = getattr(ticker_obj, "info", {}) or {}
 
         revenue_frame = financials if financials is not None else income_stmt
+        quarterly_revenue_frame = quarterly_financials if quarterly_financials is not None else quarterly_income_stmt
         revenue_last_year = self._extract_latest_numeric_value(revenue_frame, self._REVENUE_LABELS)
         if revenue_last_year is None:
             raise ValueError(f"Missing revenue data for ticker '{symbol}'")
@@ -53,6 +56,9 @@ class YahooFundamentalsProvider:
             raise ValueError(f"Missing free cash flow for ticker '{symbol}'")
 
         revenue_growth_5y, revenue_growth_years_used = self._calculate_revenue_growth(revenue_frame)
+        recent_quarterly_yoy_revenue_growth = self._calculate_recent_quarterly_yoy_revenue_growth(
+            quarterly_revenue_frame
+        )
 
         return Fundamentals(
             ticker=symbol,
@@ -60,6 +66,7 @@ class YahooFundamentalsProvider:
             shares_outstanding=float(shares_outstanding),
             net_debt=float(total_debt) - float(cash_and_equivalents),
             revenue_growth_5y=revenue_growth_5y,
+            recent_quarterly_yoy_revenue_growth=recent_quarterly_yoy_revenue_growth,
             revenue_growth_years_used=revenue_growth_years_used,
             fcf_margin=float(free_cash_flow) / float(revenue_last_year),
             country=info.get("country"),
@@ -96,6 +103,15 @@ class YahooFundamentalsProvider:
         periods = years_used - 1
         cagr = (latest_revenue / oldest_revenue) ** (1 / periods) - 1
         return cagr, years_used
+
+    def _calculate_recent_quarterly_yoy_revenue_growth(self, quarterly_revenue_frame: object) -> float | None:
+        revenue_values = self._extract_valid_revenue_values(quarterly_revenue_frame)
+        if len(revenue_values) < 5:
+            return None
+
+        latest_quarter_revenue = revenue_values[0]
+        prior_year_same_quarter_revenue = revenue_values[4]
+        return (latest_quarter_revenue / prior_year_same_quarter_revenue) - 1
 
     def _extract_valid_revenue_values(self, revenue_frame: object) -> list[float]:
         if revenue_frame is None or getattr(revenue_frame, "empty", True):
