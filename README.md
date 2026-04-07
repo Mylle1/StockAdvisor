@@ -62,7 +62,7 @@ python -c "import os; from stockbot.fundamentals.fmp_provider import FMPFundamen
 
 ```python
 from stockbot.valuation.dcf import two_stage_dcf
-from stockbot.valuation.model_selector import estimate_wacc, select_valuation_model
+from stockbot.valuation.model_selector import estimate_terminal_growth, estimate_wacc, select_valuation_model
 from stockbot.valuation.reverse_dcf import reverse_dcf_implied_growth
 
 
@@ -75,14 +75,13 @@ def run_valuation_pipeline(current_price: float, fundamentals: dict, dcf_params:
 
     if model == "dcf":
         revenue_growth_5y = fundamentals.get("revenue_growth_5y") or 0.0
-        wacc = estimate_wacc(revenue_growth_5y)
         return two_stage_dcf(
             current_price=current_price,
             revenue_last_year=fundamentals["revenue_last_year"],
-            revenue_growth=dcf_params["revenue_growth"],
+            revenue_growth=revenue_growth_5y,
             target_fcf_margin=dcf_params["target_fcf_margin"],
-            wacc=wacc,
-            terminal_growth=dcf_params["terminal_growth"],
+            wacc=estimate_wacc(revenue_growth_5y),
+            terminal_growth=estimate_terminal_growth(fundamentals.get("country")),
             forecast_years=dcf_params.get("forecast_years", 10),
             net_debt=fundamentals["net_debt"],
             shares_outstanding=fundamentals["shares_outstanding"],
@@ -93,9 +92,23 @@ def run_valuation_pipeline(current_price: float, fundamentals: dict, dcf_params:
         shares_outstanding=fundamentals["shares_outstanding"],
         revenue_last_year=fundamentals["revenue_last_year"],
         target_fcf_margin=reverse_dcf_params["target_fcf_margin"],
-        wacc=reverse_dcf_params["wacc"],
-        terminal_growth=reverse_dcf_params["terminal_growth"],
+        wacc=estimate_wacc(fundamentals.get("revenue_growth_5y") or 0.0),
+        terminal_growth=estimate_terminal_growth(fundamentals.get("country")),
         forecast_years=reverse_dcf_params.get("forecast_years", 10),
         net_debt=fundamentals["net_debt"],
     )
 ```
+
+## Valuation CLI usage (prices loaded from holdings JSON)
+
+```powershell
+Set-Location StockAdvisor
+python -m stockbot.cli.valuate `
+  --fundamentals data/fundamentals.json `
+  --holdings reports/nordnet_holdings_mapped.json `
+  --target-fcf-margin 0.2 `
+  --forecast-years 10 `
+  --tickers AAPL,MSFT,NVO
+```
+
+The CLI now reads each holding's `ticker` and `current_price` from the holdings JSON and automatically estimates revenue growth, WACC, and terminal growth during valuation.
