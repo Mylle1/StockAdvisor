@@ -4,15 +4,12 @@ from stockbot.valuation.service import valuate_stock
 DCF_PARAMS = {
     "revenue_growth": 0.08,
     "target_fcf_margin": 0.2,
-    "wacc": 0.1,
-    "terminal_growth": 0.03,
     "forecast_years": 10,
 }
 
 REVERSE_DCF_PARAMS = {
     "target_fcf_margin": 0.2,
     "wacc": 0.1,
-    "terminal_growth": 0.03,
     "forecast_years": 10,
 }
 
@@ -174,3 +171,4 @@ def test_valuate_stock_estimates_terminal_growth_from_country_for_reverse_dcf(mo
     )
 
     assert captured["terminal_growth"] == 0.025
+
