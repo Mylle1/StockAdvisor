@@ -263,3 +263,49 @@ def test_valuate_stock_defaults_revenue_growth_for_dcf_when_missing(monkeypatch)
     )
 
     assert captured["revenue_growth"] == pytest.approx(0.05)
+
+
+def test_valuate_stock_passes_expected_arguments_to_two_stage_dcf(monkeypatch) -> None:
+    captured: dict[str, float] = {}
+
+    def fake_two_stage_dcf(**kwargs):
+        captured.update(kwargs)
+        return {"fair_value_per_share": 200.0, "upside_pct": 0.1}
+
+    monkeypatch.setattr("stockbot.valuation.service.two_stage_dcf", fake_two_stage_dcf)
+    monkeypatch.setattr("stockbot.valuation.service.estimate_wacc", lambda _growth: 0.123)
+    monkeypatch.setattr("stockbot.valuation.service.estimate_terminal_growth", lambda _country: 0.027)
+
+    fundamentals = Fundamentals(
+        ticker="AAPL",
+        revenue_last_year=1234.0,
+        shares_outstanding=555.0,
+        net_debt=77.0,
+        revenue_growth_5y=0.10,
+        recent_quarterly_yoy_revenue_growth=0.20,
+        fcf_margin=0.25,
+        country="USA",
+    )
+
+    dcf_params = {"target_fcf_margin": 0.30, "forecast_years": 7}
+
+    valuate_stock(
+        ticker="AAPL",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params=dcf_params,
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+        model_override="dcf",
+    )
+
+    assert captured == {
+        "current_price": 180.0,
+        "revenue_last_year": 1234.0,
+        "revenue_growth": pytest.approx(0.14),
+        "target_fcf_margin": 0.30,
+        "wacc": 0.123,
+        "terminal_growth": 0.027,
+        "forecast_years": 7,
+        "net_debt": 77.0,
+        "shares_outstanding": 555.0,
+    }

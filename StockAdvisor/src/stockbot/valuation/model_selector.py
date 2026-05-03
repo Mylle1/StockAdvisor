@@ -48,9 +48,9 @@ def estimate_wacc(revenue_growth_5y: float) -> float:
     if revenue_growth_5y >= 0.27:
         return 0.13
     if revenue_growth_5y >= 0.15:
-        return 0.11
+        return 0.10
     if revenue_growth_5y >= 0.05:
-        return 0.095
+        return 0.09
     return 0.08
 
 

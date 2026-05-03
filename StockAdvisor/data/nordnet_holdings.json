@@ -1,0 +1,28 @@
+[
+  {
+    "platform": "nordnet",
+    "name": "ASML Holding",
+    "currency": "USD",
+    "quantity": 1.0,
+    "avg_price": 836.88,
+    "current_price": 1381.09,
+    "market_value": 1381.09,
+    "market_value_dkk": 8832.8577713,
+    "gain_pct": 60.52,
+    "gain_dkk": 3330.2325292,
+    "ticker": null
+  },
+  {
+    "platform": "nordnet",
+    "name": "Duolingo A",
+    "currency": "USD",
+    "quantity": 6.0,
+    "avg_price": 158.185,
+    "current_price": 102.0,
+    "market_value": 612.0,
+    "market_value_dkk": 3914.08884,
+    "gain_pct": -35.7,
+    "gain_dkk": -2173.5436127,
+    "ticker": null
+  }
+]

@@ -99,3 +99,70 @@ def test_main_passes_fundamentals_to_service_for_dcf_growth_estimation(monkeypat
     output = capsys.readouterr().out
     assert "ticker" in output
     assert "AAPL" in output
+
+
+def test_main_passes_expected_cli_params_to_valuation_service(monkeypatch) -> None:
+    fundamentals = Fundamentals(
+        ticker="AAPL",
+        revenue_last_year=1000.0,
+        shares_outstanding=100.0,
+        revenue_growth_5y=0.12,
+        recent_quarterly_yoy_revenue_growth=0.25,
+        fcf_margin=0.2,
+    )
+
+    monkeypatch.setattr(
+        "stockbot.cli.valuate.load_fundamentals_from_json",
+        lambda _path: {"AAPL": fundamentals},
+    )
+    monkeypatch.setattr(
+        "stockbot.cli.valuate._load_price_lookup_from_holdings",
+        lambda _path: {"AAPL": 180.0},
+    )
+    monkeypatch.setattr("stockbot.cli.valuate.estimate_wacc", lambda growth: 0.09)
+
+    captured: dict[str, object] = {}
+
+    def fake_valuate_stock(**kwargs):
+        captured.update(kwargs)
+        return {
+            "ticker": "AAPL",
+            "model_used": "reverse_dcf",
+            "current_price": 180.0,
+            "fair_value_per_share": 200.0,
+            "upside_pct": 0.1111,
+            "implied_revenue_growth": 0.08,
+        }
+
+    monkeypatch.setattr("stockbot.cli.valuate.valuate_stock", fake_valuate_stock)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "valuate",
+            "--fundamentals",
+            "fundamentals.json",
+            "--holdings",
+            "holdings.json",
+            "--tickers",
+            "AAPL",
+            "--target-fcf-margin",
+            "0.3",
+            "--forecast-years",
+            "7",
+            "--model-override",
+            "reverse_dcf",
+        ],
+    )
+
+    main()
+
+    assert captured["ticker"] == "AAPL"
+    assert captured["current_price"] == 180.0
+    assert captured["fundamentals"] is fundamentals
+    assert captured["dcf_params"] == {"target_fcf_margin": 0.3, "forecast_years": 7}
+    assert captured["reverse_dcf_params"] == {
+        "target_fcf_margin": 0.3,
+        "forecast_years": 7,
+        "wacc": 0.09,
+    }
+    assert captured["model_override"] == "reverse_dcf"
