@@ -90,10 +90,12 @@ def main() -> None:
         revenue_growth = fundamentals.revenue_growth_5y or 0.0
         dcf_params_for_ticker = {
             **dcf_params,
-            "revenue_growth": revenue_growth,
+            "target_fcf_margin": fundamentals.fcf_margin if fundamentals.fcf_margin is not None else dcf_params["target_fcf_margin"],
         }
+
         reverse_dcf_params_for_ticker = {
             **reverse_dcf_params,
+            "target_fcf_margin": fundamentals.fcf_margin if fundamentals.fcf_margin is not None else reverse_dcf_params["target_fcf_margin"],
             "wacc": estimate_wacc(revenue_growth),
         }
 
