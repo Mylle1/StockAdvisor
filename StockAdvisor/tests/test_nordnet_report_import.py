@@ -26,3 +26,22 @@ def test_load_nordnet_holdings_from_report_parses_utf16_and_decimal_comma(tmp_pa
     assert holding["gain_pct"] == 8.76
     assert holding["gain_dkk"] == 4321.0
     assert holding["ticker"] is None
+
+
+def test_load_nordnet_holdings_from_report_skips_non_stock_products(tmp_path) -> None:
+    report_path = tmp_path / "nordnet_report.tsv"
+    report_content = (
+        "Navn\tValuta\tAntal\tGAK\tSeneste kurs\tVÃ¦rdi\tVÃ¦rdi DKK\tUreal.afkast %\tAfkast DKK\n"
+        "Alibaba Group ADR\tUSD\t15\t89,4667\t134,34\t2015,1\t12957,093\t38,8\t3621,9668895\n"
+        "Amundi Prime All Country World UCITS ETF Acc\tEUR\t367\t11,1955\t12,32\t4521,44\t33787,4757138\t9,81\t3019,0747005\n"
+        "iShares Core MSCI Europe UCITS ETF EUR (Acc)\tEUR\t29\t87,541\t99,8\t2894,2\t21627,5594082\t13,85\t2630,7690337\n"
+        "Netcompany\tDKK\t51\t265,8059\t338,2\t17248,2\t17248,2\t27,24\t3692,1\n"
+    )
+    report_path.write_text(report_content, encoding="utf-16")
+
+    holdings = load_nordnet_holdings_from_report(str(report_path))
+
+    assert [holding["name"] for holding in holdings] == [
+        "Alibaba Group ADR",
+        "Netcompany",
+    ]

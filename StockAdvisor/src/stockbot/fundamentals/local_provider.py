@@ -21,6 +21,7 @@ def load_fundamentals_from_json(path: str) -> dict[str, Fundamentals]:
             recent_quarterly_yoy_revenue_growth=payload.get("recent_quarterly_yoy_revenue_growth"),
             fcf_margin=payload.get("fcf_margin"),
             country=payload.get("country"),
+            financial_currency=payload.get("financial_currency"),
         )
 
     return fundamentals_by_ticker

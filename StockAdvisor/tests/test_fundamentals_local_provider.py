@@ -14,6 +14,7 @@ def test_load_fundamentals_from_json(tmp_path) -> None:
                     "net_debt": 0,
                     "revenue_growth_5y": 0.10,
                     "fcf_margin": 0.22,
+                    "financial_currency": "USD",
                 },
                 "MSFT": {
                     "revenue_last_year": 1200,
@@ -29,5 +30,7 @@ def test_load_fundamentals_from_json(tmp_path) -> None:
     assert set(data.keys()) == {"AAPL", "MSFT"}
     assert data["AAPL"].ticker == "AAPL"
     assert data["AAPL"].revenue_growth_5y == 0.10
+    assert data["AAPL"].financial_currency == "USD"
     assert data["MSFT"].net_debt == 0.0
     assert data["MSFT"].fcf_margin is None
+    assert data["MSFT"].financial_currency is None
