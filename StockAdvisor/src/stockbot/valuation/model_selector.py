@@ -46,15 +46,15 @@ def select_valuation_model(
 def estimate_wacc(revenue_growth_5y: float) -> float:
     """Estimate WACC from historical 5Y revenue growth using a step model."""
     if revenue_growth_5y >= 0.27:
-        return 0.13
+        return 0.12
     if revenue_growth_5y >= 0.15:
         return 0.10
     if revenue_growth_5y >= 0.05:
-        return 0.09
+        return 0.085
     return 0.08
 
 
 def estimate_terminal_growth(country: str | None) -> float:
     if country in DEVELOPED_MARKETS:
-        return 0.025
-    return 0.035
+        return 0.023
+    return 0.032

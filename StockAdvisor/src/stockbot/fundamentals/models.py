@@ -14,3 +14,4 @@ class Fundamentals:
     revenue_growth_years_used: int | None = None
     fcf_margin: float | None = None
     country: str | None = None
+    financial_currency: str | None = None

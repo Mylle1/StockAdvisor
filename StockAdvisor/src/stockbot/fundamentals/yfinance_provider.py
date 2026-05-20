@@ -70,6 +70,7 @@ class YahooFundamentalsProvider:
             revenue_growth_years_used=revenue_growth_years_used,
             fcf_margin=float(free_cash_flow) / float(revenue_last_year),
             country=info.get("country"),
+            financial_currency=info.get("financialCurrency") or info.get("currency"),
         )
 
     def _extract_latest_numeric_value(self, frame: object, labels: Iterable[str]) -> float | None:

@@ -63,7 +63,7 @@ def _build_ticker(
         quarterly_financials=FakeFrame({revenue_label: quarterly_revenues or []}),
         balance_sheet=FakeFrame({"Total Debt": [50.0], "Cash And Cash Equivalents": [10.0]}),
         cashflow=FakeFrame({"Free Cash Flow": [30.0]}),
-        info={"sharesOutstanding": 1000},
+        info={"sharesOutstanding": 1000, "financialCurrency": "USD"},
     )
 
 
@@ -85,6 +85,7 @@ def test_get_fundamentals_maps_yfinance_data_with_5_year_growth(monkeypatch: pyt
     assert fundamentals.net_debt == 40.0
     assert fundamentals.fcf_margin == pytest.approx(0.15)
     assert fundamentals.country is None
+    assert fundamentals.financial_currency == "USD"
     assert fundamentals.revenue_growth_5y == pytest.approx((200.0 / 120.0) ** (1 / 4) - 1)
     assert fundamentals.recent_quarterly_yoy_revenue_growth == pytest.approx((60.0 / 48.0) - 1)
     assert fundamentals.revenue_growth_years_used == 5
