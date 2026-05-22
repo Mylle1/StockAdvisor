@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 
 class Holding(BaseModel):
-    platform: Literal["saxo", "nordnet"]
+    platform: Literal["nordnet"]
     ticker: str
     name: str | None = None
     quantity: float
