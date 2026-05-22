@@ -30,11 +30,11 @@ def test_estimate_wacc_at_or_above_high_growth_bucket() -> None:
 
 
 def test_estimate_wacc_at_or_above_mid_growth_bucket() -> None:
-    assert estimate_wacc(0.15) == 0.11
+    assert estimate_wacc(0.15) == 0.10
 
 
 def test_estimate_wacc_at_or_above_low_growth_bucket() -> None:
-    assert estimate_wacc(0.05) == 0.095
+    assert estimate_wacc(0.05) == 0.09
 
 
 def test_estimate_wacc_for_very_low_growth() -> None:

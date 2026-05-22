@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from typing import Any
 
 _REQUIRED_COLUMNS = [
@@ -14,6 +15,20 @@ _REQUIRED_COLUMNS = [
     "Ureal.afkast %",
     "Afkast DKK",
 ]
+
+_NON_STOCK_NAME_TOKENS = {
+    "certificate",
+    "certifikat",
+    "etc",
+    "etf",
+    "etn",
+    "fond",
+    "fund",
+    "investeringsforening",
+    "obligation",
+    "ucits",
+    "warrant",
+}
 
 
 def _parse_danish_float(value: str | None) -> float | None:
@@ -29,6 +44,11 @@ def _parse_danish_float(value: str | None) -> float | None:
     return float(cleaned)
 
 
+def _is_stock_holding_name(name: str) -> bool:
+    tokens = set(re.findall(r"[a-z0-9]+", name.lower()))
+    return tokens.isdisjoint(_NON_STOCK_NAME_TOKENS)
+
+
 def load_nordnet_holdings_from_report(path: str) -> list[dict[str, Any]]:
     with open(path, "r", encoding="utf-16", newline="") as report_file:
         reader = csv.DictReader(report_file, delimiter="\t")
@@ -41,10 +61,14 @@ def load_nordnet_holdings_from_report(path: str) -> list[dict[str, Any]]:
 
         holdings: list[dict[str, Any]] = []
         for row in reader:
+            name = (row.get("Navn") or "").strip()
+            if not _is_stock_holding_name(name):
+                continue
+
             holdings.append(
                 {
                     "platform": "nordnet",
-                    "name": (row.get("Navn") or "").strip(),
+                    "name": name,
                     "currency": (row.get("Valuta") or "").strip(),
                     "quantity": _parse_danish_float(row.get("Antal")),
                     "avg_price": _parse_danish_float(row.get("GAK")),
