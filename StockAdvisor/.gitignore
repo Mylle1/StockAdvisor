@@ -15,6 +15,10 @@ venv/
 # Env files / secrets
 .env
 
+# Local data exports / generated files
+data/*
+!data/ticker_mapping.json
+
 # OS / editor
 .DS_Store
 .vscode/
