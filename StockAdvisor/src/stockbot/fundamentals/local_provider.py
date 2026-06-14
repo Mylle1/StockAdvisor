@@ -20,6 +20,8 @@ def load_fundamentals_from_json(path: str) -> dict[str, Fundamentals]:
             revenue_growth_years_used=payload.get("revenue_growth_years_used"),
             recent_quarterly_yoy_revenue_growth=payload.get("recent_quarterly_yoy_revenue_growth"),
             fcf_margin=payload.get("fcf_margin"),
+            normalized_fcf_margin=payload.get("normalized_fcf_margin"),
+            fcf_margin_years_used=payload.get("fcf_margin_years_used"),
             country=payload.get("country"),
             financial_currency=payload.get("financial_currency"),
         )

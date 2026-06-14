@@ -10,6 +10,7 @@ from stockbot.fundamentals.models import Fundamentals
 
 class YahooFundamentalsProvider:
     _REVENUE_LABELS = ["Total Revenue", "Operating Revenue", "Revenue"]
+    _FREE_CASH_FLOW_LABELS = ["Free Cash Flow", "FreeCashFlow"]
 
     def get_fundamentals(self, ticker: str) -> Fundamentals:
         symbol = ticker.strip().upper()
@@ -51,11 +52,15 @@ class YahooFundamentalsProvider:
         if cash_and_equivalents is None:
             raise ValueError(f"Missing cash and cash equivalents for ticker '{symbol}'")
 
-        free_cash_flow = self._extract_latest_numeric_value(cashflow, ["Free Cash Flow", "FreeCashFlow"])
+        free_cash_flow = self._extract_latest_numeric_value(cashflow, self._FREE_CASH_FLOW_LABELS)
         if free_cash_flow is None:
             raise ValueError(f"Missing free cash flow for ticker '{symbol}'")
 
         revenue_growth_5y, revenue_growth_years_used = self._calculate_revenue_growth(revenue_frame)
+        normalized_fcf_margin, fcf_margin_years_used = self._calculate_normalized_fcf_margin(
+            revenue_frame,
+            cashflow,
+        )
         recent_quarterly_yoy_revenue_growth = self._calculate_recent_quarterly_yoy_revenue_growth(
             quarterly_revenue_frame
         )
@@ -69,6 +74,8 @@ class YahooFundamentalsProvider:
             recent_quarterly_yoy_revenue_growth=recent_quarterly_yoy_revenue_growth,
             revenue_growth_years_used=revenue_growth_years_used,
             fcf_margin=float(free_cash_flow) / float(revenue_last_year),
+            normalized_fcf_margin=normalized_fcf_margin,
+            fcf_margin_years_used=fcf_margin_years_used,
             country=info.get("country"),
             financial_currency=info.get("financialCurrency") or info.get("currency"),
         )
@@ -114,6 +121,31 @@ class YahooFundamentalsProvider:
         prior_year_same_quarter_revenue = revenue_values[4]
         return (latest_quarter_revenue / prior_year_same_quarter_revenue) - 1
 
+    def _calculate_normalized_fcf_margin(
+        self,
+        revenue_frame: object,
+        cashflow_frame: object,
+    ) -> tuple[float | None, int | None]:
+        revenue_values = self._extract_numeric_values(revenue_frame, self._REVENUE_LABELS)
+        fcf_values = self._extract_numeric_values(cashflow_frame, self._FREE_CASH_FLOW_LABELS)
+
+        matched_years: list[tuple[float, float]] = []
+        for revenue, free_cash_flow in zip(revenue_values, fcf_values):
+            if revenue is None or free_cash_flow is None:
+                continue
+            if revenue <= 0:
+                continue
+            matched_years.append((revenue, free_cash_flow))
+
+        years_used = min(5, len(matched_years))
+        if years_used < 3:
+            return None, None
+
+        selected_years = matched_years[:years_used]
+        total_revenue = sum(revenue for revenue, _free_cash_flow in selected_years)
+        total_free_cash_flow = sum(free_cash_flow for _revenue, free_cash_flow in selected_years)
+        return total_free_cash_flow / total_revenue, years_used
+
     def _extract_valid_revenue_values(self, revenue_frame: object) -> list[float]:
         if revenue_frame is None or getattr(revenue_frame, "empty", True):
             return []
@@ -140,6 +172,22 @@ class YahooFundamentalsProvider:
                 values.append(number)
 
         return values
+
+    def _extract_numeric_values(self, frame: object, labels: Iterable[str]) -> list[float | None]:
+        if frame is None or getattr(frame, "empty", True):
+            return []
+
+        index = getattr(frame, "index", None)
+        if index is None:
+            return []
+
+        for label in labels:
+            if label not in index:
+                continue
+            series = frame.loc[label]
+            return [self._to_positive_or_negative_number(value) for value in series.tolist()]
+
+        return []
 
     @staticmethod
     def _to_positive_or_negative_number(value: object) -> float | None:

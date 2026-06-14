@@ -141,6 +141,11 @@ def main() -> None:
         default=[],
         help="Override FX rate as FROM:TO=RATE, e.g. CNY:USD=0.147 or NOK:EUR=0.085",
     )
+    parser.add_argument(
+        "--show-params",
+        action="store_true",
+        help="Print valuation input parameters for each ticker.",
+    )
     args = parser.parse_args()
 
     fundamentals_by_ticker = load_fundamentals_from_json(args.fundamentals)
@@ -177,9 +182,14 @@ def main() -> None:
             "target_fcf_margin": fundamentals.fcf_margin if fundamentals.fcf_margin is not None else dcf_params["target_fcf_margin"],
         }
 
+        reverse_dcf_target_fcf_margin = (
+            fundamentals.normalized_fcf_margin
+            if fundamentals.normalized_fcf_margin is not None
+            else fundamentals.fcf_margin
+        )
         reverse_dcf_params_for_ticker = {
             **reverse_dcf_params,
-            "target_fcf_margin": fundamentals.fcf_margin if fundamentals.fcf_margin is not None else reverse_dcf_params["target_fcf_margin"],
+            "target_fcf_margin": reverse_dcf_target_fcf_margin,
             "wacc": estimate_wacc(revenue_growth),
         }
 
@@ -192,6 +202,7 @@ def main() -> None:
                     dcf_params=dcf_params_for_ticker,
                     reverse_dcf_params=reverse_dcf_params_for_ticker,
                     model_override=args.model_override,
+                    show_params=args.show_params,
                 ),
                 "current_price": current_price,
                 "quote_currency": quote_currency,
