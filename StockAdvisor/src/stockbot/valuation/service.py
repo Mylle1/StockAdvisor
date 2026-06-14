@@ -26,6 +26,7 @@ def valuate_stock(
     dcf_params: dict,
     reverse_dcf_params: dict,
     model_override: str | None = None,
+    show_params: bool = False,
 ) -> dict:
     model_used = model_override or select_valuation_model(
         fundamentals.revenue_growth_5y,
@@ -38,14 +39,15 @@ def valuate_stock(
             "current_price": current_price,
             "revenue_last_year": fundamentals.revenue_last_year,
             "revenue_growth": dcf_revenue_growth,
-            "target_fcf_margin": fundamentals.fcf_margin,
+            "target_fcf_margin": dcf_params["target_fcf_margin"],
             "wacc": estimate_wacc(fundamentals.revenue_growth_5y or 0.0),
             "terminal_growth": estimate_terminal_growth(fundamentals.country),
             "forecast_years": dcf_params.get("forecast_years", 10),
             "net_debt": fundamentals.net_debt,
             "shares_outstanding": fundamentals.shares_outstanding,
         }
-        print(f"[DCF DEBUG] {ticker}: {dcf_inputs}")
+        if show_params:
+            print(f"[DCF PARAMS] {ticker}: {dcf_inputs}")
         dcf_result = two_stage_dcf(
             current_price=dcf_inputs["current_price"],
             revenue_last_year=dcf_inputs["revenue_last_year"],
@@ -66,16 +68,38 @@ def valuate_stock(
         }
 
     if model_used == "reverse_dcf":
+        if reverse_dcf_params["target_fcf_margin"] is None:
+            raise ValueError(f"Missing reverse DCF target FCF margin for ticker '{ticker}'")
+
+        reverse_dcf_inputs = {
+            "current_price": current_price,
+            "shares_outstanding": fundamentals.shares_outstanding,
+            "revenue_last_year": fundamentals.revenue_last_year,
+            "historical_revenue_growth_5y": fundamentals.revenue_growth_5y,
+            "latest_fcf_margin": fundamentals.fcf_margin,
+            "normalized_fcf_margin": fundamentals.normalized_fcf_margin,
+            "fcf_margin_years_used": fundamentals.fcf_margin_years_used,
+            "target_fcf_margin": reverse_dcf_params["target_fcf_margin"],
+            "wacc": reverse_dcf_params["wacc"],
+            "terminal_growth": estimate_terminal_growth(fundamentals.country),
+            "forecast_years": reverse_dcf_params.get("forecast_years", 10),
+            "net_debt": fundamentals.net_debt,
+        }
         reverse_result = reverse_dcf_implied_growth(
-            current_price=current_price,
-            shares_outstanding=fundamentals.shares_outstanding,
-            revenue_last_year=fundamentals.revenue_last_year,
-            target_fcf_margin=reverse_dcf_params["target_fcf_margin"],
-            wacc=reverse_dcf_params["wacc"],
-            terminal_growth=estimate_terminal_growth(fundamentals.country),
-            forecast_years=reverse_dcf_params.get("forecast_years", 10),
-            net_debt=fundamentals.net_debt,
+            current_price=reverse_dcf_inputs["current_price"],
+            shares_outstanding=reverse_dcf_inputs["shares_outstanding"],
+            revenue_last_year=reverse_dcf_inputs["revenue_last_year"],
+            target_fcf_margin=reverse_dcf_inputs["target_fcf_margin"],
+            wacc=reverse_dcf_inputs["wacc"],
+            terminal_growth=reverse_dcf_inputs["terminal_growth"],
+            forecast_years=reverse_dcf_inputs["forecast_years"],
+            net_debt=reverse_dcf_inputs["net_debt"],
         )
+        if show_params:
+            print(
+                f"[REVERSE DCF PARAMS] {ticker}: "
+                f"{reverse_dcf_inputs | {'implied_revenue_growth': reverse_result['implied_revenue_growth']}}"
+            )
         return {
             "ticker": ticker,
             "model_used": "reverse_dcf",

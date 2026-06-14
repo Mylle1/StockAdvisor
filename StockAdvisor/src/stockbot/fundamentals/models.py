@@ -13,5 +13,7 @@ class Fundamentals:
     recent_quarterly_yoy_revenue_growth: float | None = None
     revenue_growth_years_used: int | None = None
     fcf_margin: float | None = None
+    normalized_fcf_margin: float | None = None
+    fcf_margin_years_used: int | None = None
     country: str | None = None
     financial_currency: str | None = None
