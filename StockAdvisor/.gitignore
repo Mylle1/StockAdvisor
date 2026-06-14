@@ -12,6 +12,13 @@ build/
 .venv/
 venv/
 
+# Frontend
+node_modules/
+frontend/.npm-cache/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
 # Env files / secrets
 .env
 

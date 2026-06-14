@@ -1,0 +1,54 @@
+[
+  {
+    "platform": "nordnet",
+    "name": "BioMar Group",
+    "currency": "DKK",
+    "quantity": 8.0,
+    "avg_price": 117.65,
+    "current_price": 107.8,
+    "market_value": 862.4,
+    "market_value_dkk": 862.4,
+    "gain_pct": -8.37,
+    "gain_dkk": -78.8,
+    "ticker": null
+  },
+  {
+    "platform": "nordnet",
+    "name": "Novo Nordisk B",
+    "currency": "DKK",
+    "quantity": 7.0,
+    "avg_price": 276.1286,
+    "current_price": 284.95,
+    "market_value": 1994.65,
+    "market_value_dkk": 1994.65,
+    "gain_pct": 3.19,
+    "gain_dkk": 61.75,
+    "ticker": null
+  },
+  {
+    "platform": "nordnet",
+    "name": "Red Cat",
+    "currency": "USD",
+    "quantity": 15.0,
+    "avg_price": 11.3592,
+    "current_price": 11.97,
+    "market_value": 179.55,
+    "market_value_dkk": 1158.5804895,
+    "gain_pct": 5.99,
+    "gain_dkk": 65.4651483,
+    "ticker": null
+  },
+  {
+    "platform": "nordnet",
+    "name": "Vitrolife",
+    "currency": "SEK",
+    "quantity": 49.0,
+    "avg_price": 89.6939,
+    "current_price": 97.8,
+    "market_value": 4792.2,
+    "market_value_dkk": 3276.9196052,
+    "gain_pct": 6.42,
+    "gain_dkk": 197.704367,
+    "ticker": null
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "BIOMAR.CO": {
+    "ticker": "BIOMAR.CO",
+    "revenue_last_year": 16534000000.0,
+    "shares_outstanding": 100463000.0,
+    "net_debt": 3302000000.0,
+    "revenue_growth_5y": -0.038322400284361624,
+    "recent_quarterly_yoy_revenue_growth": null,
+    "revenue_growth_years_used": 3,
+    "fcf_margin": 0.07741623321640256,
+    "normalized_fcf_margin": 0.060378615661989495,
+    "fcf_margin_years_used": 3,
+    "country": "Denmark",
+    "financial_currency": "DKK"
+  },
+  "NOVO-B.CO": {
+    "ticker": "NOVO-B.CO",
+    "revenue_last_year": 309064000000.0,
+    "shares_outstanding": 3354183520.0,
+    "net_debt": 104494000000.0,
+    "revenue_growth_5y": 0.2042851902310494,
+    "recent_quarterly_yoy_revenue_growth": 0.2399375056027251,
+    "revenue_growth_years_used": 4,
+    "fcf_margin": 0.09379610695519375,
+    "normalized_fcf_margin": 0.23079027879946307,
+    "fcf_margin_years_used": 4,
+    "country": "Denmark",
+    "financial_currency": "DKK"
+  },
+  "RCAT": {
+    "ticker": "RCAT",
+    "revenue_last_year": 40729000.0,
+    "shares_outstanding": 152192265.0,
+    "net_debt": -149430000.0,
+    "revenue_growth_5y": 0.850351658102009,
+    "recent_quarterly_yoy_revenue_growth": 8.491411042944785,
+    "revenue_growth_years_used": 4,
+    "fcf_margin": -2.351665889169879,
+    "normalized_fcf_margin": -2.274856464782911,
+    "fcf_margin_years_used": 4,
+    "country": "United States",
+    "financial_currency": "USD"
+  },
+  "VITR.ST": {
+    "ticker": "VITR.ST",
+    "revenue_last_year": 3440000000.0,
+    "shares_outstanding": 135447190.0,
+    "net_debt": 796000000.0,
+    "revenue_growth_5y": 0.02079721301742299,
+    "recent_quarterly_yoy_revenue_growth": -0.15849843587069867,
+    "revenue_growth_years_used": 4,
+    "fcf_margin": 0.1127906976744186,
+    "normalized_fcf_margin": 0.16527727437477346,
+    "fcf_margin_years_used": 4,
+    "country": "Sweden",
+    "financial_currency": "SEK"
+  }
+}
