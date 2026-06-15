@@ -4,7 +4,6 @@ import { AnalysisHistory } from "./components/AnalysisHistory";
 import { CsvUpload } from "./components/CsvUpload";
 import { PortfolioTable } from "./components/PortfolioTable";
 import { StockDetail } from "./components/StockDetail";
-import { mockValuations } from "./data/mockValuations";
 import type { ValuationStock } from "./types";
 
 type Page = "portfolio" | "upload" | "history";
@@ -17,14 +16,22 @@ const pageItems: Array<{ id: Page; label: string; icon: typeof BarChart3 }> = [
 
 function App() {
   const [activePage, setActivePage] = useState<Page>("portfolio");
-  const [selectedTicker, setSelectedTicker] = useState(mockValuations[0].ticker);
+  const [valuations, setValuations] = useState<ValuationStock[]>([]);
+  const [selectedTicker, setSelectedTicker] = useState<string>("");
 
-  const selectedStock = useMemo<ValuationStock>(
+  const selectedStock = useMemo<ValuationStock | null>(
     () =>
-      mockValuations.find((stock) => stock.ticker === selectedTicker) ??
-      mockValuations[0],
-    [selectedTicker],
+      valuations.find((stock) => stock.ticker === selectedTicker) ??
+      valuations[0] ??
+      null,
+    [selectedTicker, valuations],
   );
+
+  function handleValuationsReady(stocks: ValuationStock[]) {
+    setValuations(stocks);
+    setSelectedTicker(stocks[0]?.ticker ?? "");
+    setActivePage("portfolio");
+  }
 
   return (
     <main className="app-shell">
@@ -73,19 +80,40 @@ function App() {
         </header>
 
         {activePage === "portfolio" && (
-          <div className="portfolio-layout">
-            <section className="panel table-panel" aria-label="Portfolio table">
-              <PortfolioTable
-                stocks={mockValuations}
-                selectedTicker={selectedStock.ticker}
-                onSelectStock={setSelectedTicker}
-              />
+          valuations.length > 0 && selectedStock ? (
+            <div className="portfolio-layout">
+              <section className="panel table-panel" aria-label="Portfolio table">
+                <PortfolioTable
+                  stocks={valuations}
+                  selectedTicker={selectedStock.ticker}
+                  onSelectStock={setSelectedTicker}
+                />
+              </section>
+              <StockDetail stock={selectedStock} />
+            </div>
+          ) : (
+            <section className="panel empty-panel">
+              <p className="eyebrow">Current run</p>
+              <h3>No valuation run loaded</h3>
+              <p>
+                Upload a Nordnet CSV, confirm tickers, and run the valuation to
+                populate this workspace.
+              </p>
+              <button
+                className="primary-button emphasized"
+                type="button"
+                onClick={() => setActivePage("upload")}
+              >
+                <FileUp size={17} aria-hidden="true" />
+                <span>Upload CSV</span>
+              </button>
             </section>
-            <StockDetail stock={selectedStock} />
-          </div>
+          )
         )}
 
-        {activePage === "upload" && <CsvUpload />}
+        {activePage === "upload" && (
+          <CsvUpload onValuationsReady={handleValuationsReady} />
+        )}
 
         {activePage === "history" && <AnalysisHistory />}
       </section>

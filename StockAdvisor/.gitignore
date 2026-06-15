@@ -7,6 +7,11 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+.tmp/
+tmp_pytest_*/
+pytest-cache-files-*/
+tests/.tmp_*/
 
 # Virtual environments
 .venv/

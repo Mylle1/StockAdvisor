@@ -1,30 +1,45 @@
-# StockAdvisor frontend prototype
+# StockAdvisor frontend
 
-This folder contains the first React and TypeScript prototype for the
-StockAdvisor web interface. It is intentionally front-end only and uses mock
-valuation output so the UI can later be connected to the existing Python
-valuation backend.
+This folder contains the React and TypeScript frontend for StockAdvisor. It
+connects to the local FastAPI backend for Nordnet CSV upload, manual ticker
+mapping, and valuation results.
 
 ## Structure
 
 - `src/App.tsx` controls the page navigation and selected stock state.
-- `src/data/mockValuations.ts` contains mock valuation output based on the
-  current CLI rows.
+- `src/api.ts` contains the backend API calls.
 - `src/types.ts` defines the valuation data shape expected by the UI.
 - `src/components/PortfolioTable.tsx` renders the portfolio valuation table.
 - `src/components/StockDetail.tsx` renders model-specific assumptions and
   valuation output for the selected stock.
-- `src/components/CsvUpload.tsx` provides the Nordnet CSV upload placeholder.
+- `src/components/CsvUpload.tsx` provides upload, manual ticker mapping, and
+  valuation controls.
 - `src/components/AnalysisHistory.tsx` provides the future history placeholder.
 - `src/utils/formatters.ts` centralizes number, percentage, and model labels.
 - `src/styles.css` contains the minimal professional styling.
 
 ## Local development
 
-```bash
-npm install
-npm run dev
+Start the Python backend from the project root first:
+
+```powershell
+.\.venv\Scripts\python -m uvicorn stockbot.api:app --reload --host 127.0.0.1 --port 8001
 ```
 
-The current version does not process uploaded CSV files. CSV processing will be
-connected to the Python backend later.
+Then start the frontend:
+
+```bash
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+The frontend uses `http://localhost:8001` by default. To override it:
+
+```powershell
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8001"
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Manual ticker input is the ticker mapping flow. When valuation is run, the
+backend generates `../data/fundamentals.json` from yfinance before using the
+existing valuation engine.

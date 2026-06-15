@@ -4,7 +4,7 @@ export type ValuationStock = {
   ticker: string;
   companyName: string;
   modelUsed: ModelUsed;
-  currency: "USD" | "DKK";
+  currency: string;
   currentPrice: number;
   fairValue: number | null;
   upsidePct: number | null;
@@ -20,5 +20,53 @@ export type ValuationStock = {
     netDebt?: number;
     sharesOutstanding?: number;
     impliedRevenueGrowth?: number;
+  };
+  holding?: Holding;
+};
+
+export type Holding = {
+  platform: string;
+  name: string;
+  currency: string;
+  quantity: number | null;
+  avg_price: number | null;
+  current_price: number | null;
+  market_value: number | null;
+  market_value_dkk: number | null;
+  gain_pct: number | null;
+  gain_dkk: number | null;
+  ticker: string | null;
+};
+
+export type UploadResponse = {
+  holdings: Holding[];
+  unmappedNames: string[];
+  importedCount: number;
+  filteredOutCount: number;
+};
+
+export type MappingResponse = {
+  holdings: Holding[];
+  unmappedNames: string[];
+  mappingPath: string;
+};
+
+export type TickerMappingPayload = {
+  name: string;
+  ticker: string;
+};
+
+export type ValuationError = {
+  name: string;
+  ticker?: string;
+  message: string;
+};
+
+export type ValuationResponse = {
+  results: ValuationStock[];
+  errors: ValuationError[];
+  parameters: {
+    dcf: Record<string, number>;
+    reverseDcf: Record<string, number>;
   };
 };
