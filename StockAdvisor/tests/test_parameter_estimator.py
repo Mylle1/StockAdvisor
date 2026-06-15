@@ -34,7 +34,7 @@ def test_estimate_valuation_params_uses_company_specific_inputs() -> None:
     growth_params = estimate_valuation_params(growth, trading_currency="NOK")
 
     assert stable_params["dcf"]["revenue_growth"] == 0.04
-    assert growth_params["dcf"]["revenue_growth"] == pytest.approx(0.19)
+    assert growth_params["dcf"]["revenue_growth"] == pytest.approx(0.205)
     assert stable_params["dcf"]["target_fcf_margin"] == 0.18
     assert growth_params["dcf"]["target_fcf_margin"] == 0.05
     assert stable_params["dcf"]["wacc"] != growth_params["dcf"]["wacc"]
@@ -59,7 +59,7 @@ def test_estimate_dcf_revenue_growth_blends_quarterly_and_historical_growth() ->
             revenue_growth_5y=0.10,
             recent_quarterly_yoy_revenue_growth=0.20,
         )
-    ) == pytest.approx(0.14)
+    ) == pytest.approx(0.13)
     assert estimate_dcf_revenue_growth(
         Fundamentals(
             ticker="QUARTER",

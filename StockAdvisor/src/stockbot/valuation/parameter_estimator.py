@@ -62,7 +62,7 @@ def estimate_dcf_revenue_growth(fundamentals: Fundamentals) -> float:
     historical_growth = fundamentals.revenue_growth_5y
 
     if quarterly_yoy_growth is not None and historical_growth is not None:
-        return (0.4 * quarterly_yoy_growth) + (0.6 * historical_growth)
+        return (0.7 * historical_growth) + (0.3 * quarterly_yoy_growth)
     if quarterly_yoy_growth is not None:
         return quarterly_yoy_growth
     if historical_growth is not None:

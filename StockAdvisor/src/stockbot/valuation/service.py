@@ -15,7 +15,7 @@ def valuate_stock(
     model_override: str | None = None,
 ) -> dict:
     model_used = model_override or select_valuation_model(
-        fundamentals.revenue_growth_5y,
+        dcf_params["revenue_growth"],
         fundamentals.fcf_margin,
     )
 

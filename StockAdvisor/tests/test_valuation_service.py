@@ -55,11 +55,33 @@ def test_valuate_stock_selects_reverse_dcf_and_returns_required_fields() -> None
         ticker="SHOP",
         current_price=180.0,
         fundamentals=fundamentals,
-        dcf_params=DCF_PARAMS,
+        dcf_params={**DCF_PARAMS, "revenue_growth": 0.20},
         reverse_dcf_params=REVERSE_DCF_PARAMS,
     )
 
     assert result["ticker"] == "SHOP"
+    assert result["model_used"] == "reverse_dcf"
+    assert "implied_revenue_growth" in result
+
+
+def test_valuate_stock_selects_reverse_dcf_for_negative_calculated_revenue_growth() -> None:
+    fundamentals = Fundamentals(
+        ticker="DECLINE",
+        revenue_last_year=1000,
+        shares_outstanding=100,
+        net_debt=0,
+        revenue_growth_5y=0.10,
+        fcf_margin=0.2,
+    )
+
+    result = valuate_stock(
+        ticker="DECLINE",
+        current_price=180.0,
+        fundamentals=fundamentals,
+        dcf_params={**DCF_PARAMS, "revenue_growth": -0.01},
+        reverse_dcf_params=REVERSE_DCF_PARAMS,
+    )
+
     assert result["model_used"] == "reverse_dcf"
     assert "implied_revenue_growth" in result
 
