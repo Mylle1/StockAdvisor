@@ -79,11 +79,6 @@ export function StockDetail({ stock }: StockDetailProps) {
           ))}
         </dl>
       </details>
-
-      <div className="method-note">
-        This view presents valuation output and model assumptions for transparency.
-        It is intended as decision support, not as investment advice.
-      </div>
     </aside>
   );
 }

@@ -117,7 +117,7 @@ button {
 
 .workspace {
   min-width: 0;
-  padding: 34px;
+  padding: 28px 34px 22px;
 }
 
 .page-header {
@@ -125,11 +125,11 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .page-header h2 {
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1.15;
 }
 
@@ -149,8 +149,8 @@ button {
 
 .portfolio-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  gap: 16px;
   align-items: start;
 }
 
@@ -163,7 +163,7 @@ button {
 
 .table-panel {
   min-width: 0;
-  padding: 18px;
+  padding: 14px;
 }
 
 .section-heading,
@@ -172,7 +172,7 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .section-heading h3,
@@ -184,7 +184,6 @@ button {
 
 .muted-label,
 .company-name,
-.method-note,
 .placeholder-panel p,
 .upload-zone small,
 .history-preview span {
@@ -195,10 +194,19 @@ button {
   overflow-x: auto;
 }
 
+.table-panel .table-wrap {
+  overflow-x: visible;
+}
+
 table {
   width: 100%;
   min-width: 900px;
   border-collapse: collapse;
+}
+
+.portfolio-table {
+  min-width: 0;
+  table-layout: fixed;
 }
 
 th,
@@ -219,6 +227,74 @@ th {
 td {
   color: #28302a;
   font-size: 14px;
+}
+
+.portfolio-table th,
+.portfolio-table td {
+  padding: 10px 8px;
+}
+
+.portfolio-table th {
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.portfolio-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolio-table th:nth-child(n + 3),
+.portfolio-table td:nth-child(n + 3) {
+  text-align: center;
+}
+
+.portfolio-table th:nth-child(1),
+.portfolio-table td:nth-child(1) {
+  width: 22%;
+}
+
+.portfolio-table th:nth-child(2),
+.portfolio-table td:nth-child(2) {
+  width: 14%;
+}
+
+.portfolio-table th:nth-child(3),
+.portfolio-table td:nth-child(3) {
+  width: 9%;
+}
+
+.portfolio-table th:nth-child(4),
+.portfolio-table td:nth-child(4) {
+  width: 14%;
+}
+
+.portfolio-table th:nth-child(5),
+.portfolio-table td:nth-child(5) {
+  width: 12%;
+}
+
+.portfolio-table th:nth-child(6),
+.portfolio-table td:nth-child(6) {
+  width: 11%;
+}
+
+.portfolio-table th:nth-child(7),
+.portfolio-table td:nth-child(7) {
+  width: 19%;
+}
+
+.portfolio-table th:nth-child(7) {
+  white-space: nowrap;
+}
+
+.company-button {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 tbody tr {
@@ -269,20 +345,20 @@ tbody tr:hover,
 
 .detail-panel {
   position: sticky;
-  top: 24px;
-  padding: 18px;
+  top: 18px;
+  padding: 14px;
 }
 
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .metric {
-  min-height: 74px;
-  padding: 12px;
+  min-height: 58px;
+  padding: 9px;
   border: 1px solid #e1e6dd;
   border-radius: 8px;
   background: #fbfcfa;
@@ -290,7 +366,7 @@ tbody tr:hover,
 
 .metric span {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   color: #6a746d;
   font-size: 12px;
 }
@@ -298,9 +374,15 @@ tbody tr:hover,
 .metric strong {
   display: block;
   color: #202820;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.2;
   overflow-wrap: anywhere;
+}
+
+.company-name {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.3;
 }
 
 .assumptions-card {
@@ -313,8 +395,8 @@ tbody tr:hover,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 46px;
-  padding: 0 12px;
+  min-height: 38px;
+  padding: 0 10px;
   cursor: pointer;
   font-weight: 700;
   list-style: none;
@@ -336,9 +418,11 @@ tbody tr:hover,
 .parameter-row {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) minmax(90px, auto);
-  gap: 12px;
-  padding: 11px 12px;
+  gap: 10px;
+  padding: 7px 10px;
   border-bottom: 1px solid #edf0eb;
+  font-size: 14px;
+  line-height: 1.3;
 }
 
 .parameter-row:last-child {
@@ -354,15 +438,6 @@ tbody tr:hover,
   color: #202820;
   font-weight: 700;
   text-align: right;
-}
-
-.method-note {
-  margin-top: 14px;
-  padding: 12px;
-  border-left: 3px solid #6f8f77;
-  background: #f5f8f3;
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 .placeholder-panel {

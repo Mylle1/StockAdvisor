@@ -28,10 +28,9 @@ export function PortfolioTable({
       </div>
 
       <div className="table-wrap">
-        <table>
+        <table className="portfolio-table">
           <thead>
             <tr>
-              <th>Ticker</th>
               <th>Company name</th>
               <th>Model used</th>
               <th>Currency</th>
@@ -49,11 +48,15 @@ export function PortfolioTable({
                 onClick={() => onSelectStock(stock.ticker)}
               >
                 <td>
-                  <button className="link-button" type="button">
-                    {stock.ticker}
+                  <button
+                    className="link-button company-button"
+                    type="button"
+                    title={`${stock.companyName} (${stock.ticker})`}
+                    onClick={() => onSelectStock(stock.ticker)}
+                  >
+                    {stock.companyName}
                   </button>
                 </td>
-                <td>{stock.companyName}</td>
                 <td>
                   <span className={`model-chip ${stock.modelUsed}`}>
                     {formatModel(stock.modelUsed)}
