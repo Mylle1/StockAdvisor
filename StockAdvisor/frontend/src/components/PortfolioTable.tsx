@@ -1,5 +1,10 @@
 import type { ValuationStock } from "../types";
-import { formatModel, formatNumber, formatPercent } from "../utils/formatters";
+import {
+  formatFairValue,
+  formatModel,
+  formatNumber,
+  formatPercent,
+} from "../utils/formatters";
 
 type PortfolioTableProps = {
   stocks: ValuationStock[];
@@ -56,7 +61,7 @@ export function PortfolioTable({
                 </td>
                 <td>{stock.currency}</td>
                 <td>{formatNumber(stock.currentPrice)}</td>
-                <td>{formatNumber(stock.fairValue)}</td>
+                <td>{formatFairValue(stock.fairValue)}</td>
                 <td className={stock.upsidePct && stock.upsidePct < 0 ? "negative" : ""}>
                   {formatPercent(stock.upsidePct)}
                 </td>

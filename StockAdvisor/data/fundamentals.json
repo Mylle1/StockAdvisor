@@ -1,62 +1,22 @@
 {
-  "ALK-B.CO": {
-    "ticker": "ALK-B.CO",
-    "revenue_last_year": 6312000000.0,
-    "shares_outstanding": 201327842.0,
-    "net_debt": -822000000.0,
-    "revenue_growth_5y": 0.11848815114844213,
-    "recent_quarterly_yoy_revenue_growth": 0.16360052562417882,
-    "fcf_margin": 0.23083016476552598,
-    "country": "Denmark"
+  "ASML": {
+    "ticker": "ASML",
+    "revenue_last_year": 32667300000.0,
+    "shares_outstanding": 385417665.0,
+    "net_debt": -8525100000.0,
+    "revenue_growth_5y": 0.15551134263329014,
+    "recent_quarterly_yoy_revenue_growth": 0.13245495059097068,
+    "fcf_margin": 0.33756386355774737,
+    "country": "Netherlands"
   },
-  "BABA": {
-    "ticker": "BABA",
-    "revenue_last_year": 1023670000000.0,
-    "shares_outstanding": 2399133995.0,
-    "net_debt": 150192000000.0,
-    "revenue_growth_5y": 0.05624715260175872,
-    "recent_quarterly_yoy_revenue_growth": 0.029291109475838795,
-    "fcf_margin": -0.04955112487422705,
-    "country": "China"
-  },
-  "BLDR": {
-    "ticker": "BLDR",
-    "revenue_last_year": 15190638000.0,
-    "shares_outstanding": 107559876.0,
-    "net_debt": 4918518000.0,
-    "revenue_growth_5y": -0.12565732756059322,
-    "recent_quarterly_yoy_revenue_growth": -0.10127666578446015,
-    "fcf_margin": 0.056171702597349764,
+  "DUOL": {
+    "ticker": "DUOL",
+    "revenue_last_year": 1037589000.0,
+    "shares_outstanding": 40237065.0,
+    "net_debt": -942610000.0,
+    "revenue_growth_5y": 0.41082213323758765,
+    "recent_quarterly_yoy_revenue_growth": 0.26533415964948026,
+    "fcf_margin": 0.34736682829135623,
     "country": "United States"
-  },
-  "NETC.CO": {
-    "ticker": "NETC.CO",
-    "revenue_last_year": 7891700000.0,
-    "shares_outstanding": 44830732.0,
-    "net_debt": 3352200000.0,
-    "revenue_growth_5y": 0.12486425299712911,
-    "recent_quarterly_yoy_revenue_growth": 0.43838636634489325,
-    "fcf_margin": 0.04507267128755528,
-    "country": "Denmark"
-  },
-  "NOVO-B.CO": {
-    "ticker": "NOVO-B.CO",
-    "revenue_last_year": 309064000000.0,
-    "shares_outstanding": 3353058520.0,
-    "net_debt": 104494000000.0,
-    "revenue_growth_5y": 0.2042851902310494,
-    "recent_quarterly_yoy_revenue_growth": 0.2399375056027251,
-    "fcf_margin": 0.09379610695519375,
-    "country": "Denmark"
-  },
-  "TOM.OL": {
-    "ticker": "TOM.OL",
-    "revenue_last_year": 1318300000.0,
-    "shares_outstanding": 295395838.0,
-    "net_debt": 598300000.0,
-    "revenue_growth_5y": 0.04367765027591641,
-    "recent_quarterly_yoy_revenue_growth": -0.16080402010050254,
-    "fcf_margin": 0.1296366532655693,
-    "country": "Norway"
   }
 }

@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import type { ValuationStock } from "../types";
 import {
+  formatFairValue,
   formatLargeNumber,
   formatModel,
   formatNumber,
@@ -59,7 +60,7 @@ export function StockDetail({ stock }: StockDetailProps) {
 
       <div className="metric-grid">
         <Metric label="Current price" value={`${stock.currency} ${formatNumber(stock.currentPrice)}`} />
-        <Metric label="Fair value" value={formatNumber(stock.fairValue)} />
+        <Metric label="Fair value" value={formatFairValue(stock.fairValue)} />
         <Metric label="Upside" value={formatPercent(stock.upsidePct)} />
         <Metric label="Implied growth" value={formatPercent(stock.impliedGrowth)} />
       </div>

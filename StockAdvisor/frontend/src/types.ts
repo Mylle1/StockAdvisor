@@ -24,6 +24,12 @@ export type ValuationStock = {
   holding?: Holding;
 };
 
+export type AnalysisHistoryRun = {
+  id: string;
+  createdAt: string;
+  stocks: ValuationStock[];
+};
+
 export type Holding = {
   platform: string;
   name: string;

@@ -69,7 +69,8 @@ button {
 .page-header h2,
 .section-heading h3,
 .detail-header h3,
-.placeholder-panel h3 {
+.placeholder-panel h3,
+.history-empty h3 {
   margin: 0;
   letter-spacing: 0;
 }
@@ -176,7 +177,8 @@ button {
 
 .section-heading h3,
 .detail-header h3,
-.placeholder-panel h3 {
+.placeholder-panel h3,
+.history-empty h3 {
   font-size: 20px;
 }
 
@@ -372,7 +374,8 @@ tbody tr:hover,
 }
 
 .upload-panel,
-.empty-panel {
+.empty-panel,
+.history-panel {
   max-width: 1080px;
   padding: 20px;
 }
@@ -397,6 +400,20 @@ tbody tr:hover,
 .placeholder-panel p {
   max-width: 580px;
   margin: 8px 0 0;
+  line-height: 1.6;
+}
+
+.history-empty {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.history-empty p {
+  max-width: 580px;
+  margin: 8px 0 0;
+  color: #66706a;
   line-height: 1.6;
 }
 
@@ -441,8 +458,30 @@ tbody tr:hover,
   border-radius: 8px;
 }
 
-.mapping-table table {
+.mapping-table table,
+.history-table table {
   min-width: 820px;
+}
+
+.history-table {
+  margin-top: 18px;
+  border: 1px solid #e0e6dc;
+  border-radius: 8px;
+}
+
+.history-table th:last-child,
+.history-table td:last-child {
+  text-align: right;
+}
+
+.history-table .primary-button {
+  min-height: 36px;
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 
 .ticker-input {
@@ -594,8 +633,17 @@ tbody tr:hover,
     grid-template-columns: 1fr;
   }
 
-  .placeholder-panel {
+  .placeholder-panel,
+  .history-empty {
     grid-template-columns: 1fr;
+  }
+
+  .history-actions {
+    justify-content: stretch;
+  }
+
+  .history-actions .primary-button {
+    width: 100%;
   }
 
   .parameter-row {

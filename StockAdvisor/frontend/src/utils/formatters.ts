@@ -15,6 +15,17 @@ export function formatNumber(value: number | null | undefined) {
   }).format(value);
 }
 
+export function formatFairValue(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export function formatPercent(value: number | null | undefined) {
   if (value === null || value === undefined) {
     return "-";

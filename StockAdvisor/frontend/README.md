@@ -14,7 +14,7 @@ mapping, and valuation results.
   valuation output for the selected stock.
 - `src/components/CsvUpload.tsx` provides upload, manual ticker mapping, and
   valuation controls.
-- `src/components/AnalysisHistory.tsx` provides the future history placeholder.
+- `src/components/AnalysisHistory.tsx` shows saved valuation runs from local history.
 - `src/utils/formatters.ts` centralizes number, percentage, and model labels.
 - `src/styles.css` contains the minimal professional styling.
 

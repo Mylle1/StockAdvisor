@@ -4,9 +4,12 @@ import { AnalysisHistory } from "./components/AnalysisHistory";
 import { CsvUpload } from "./components/CsvUpload";
 import { PortfolioTable } from "./components/PortfolioTable";
 import { StockDetail } from "./components/StockDetail";
-import type { ValuationStock } from "./types";
+import type { AnalysisHistoryRun, ValuationStock } from "./types";
 
 type Page = "portfolio" | "upload" | "history";
+
+const ANALYSIS_HISTORY_STORAGE_KEY = "stockadvisor.analysisHistory";
+const MAX_HISTORY_RUNS = 20;
 
 const pageItems: Array<{ id: Page; label: string; icon: typeof BarChart3 }> = [
   { id: "portfolio", label: "My Portfolio", icon: BarChart3 },
@@ -14,10 +17,85 @@ const pageItems: Array<{ id: Page; label: string; icon: typeof BarChart3 }> = [
   { id: "history", label: "Analysis History", icon: History },
 ];
 
+function isValuationStockList(value: unknown): value is ValuationStock[] {
+  return (
+    Array.isArray(value) &&
+    value.every((stock) => {
+      if (!stock || typeof stock !== "object") {
+        return false;
+      }
+
+      return typeof (stock as { ticker?: unknown }).ticker === "string";
+    })
+  );
+}
+
+function isAnalysisHistoryRun(value: unknown): value is AnalysisHistoryRun {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const run = value as Partial<AnalysisHistoryRun>;
+  return (
+    typeof run.id === "string" &&
+    typeof run.createdAt === "string" &&
+    isValuationStockList(run.stocks)
+  );
+}
+
+function readAnalysisHistory(): AnalysisHistoryRun[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const rawHistory = window.localStorage.getItem(ANALYSIS_HISTORY_STORAGE_KEY);
+    if (!rawHistory) {
+      return [];
+    }
+
+    const parsedHistory: unknown = JSON.parse(rawHistory);
+    if (!Array.isArray(parsedHistory)) {
+      return [];
+    }
+
+    return parsedHistory.filter(isAnalysisHistoryRun).slice(0, MAX_HISTORY_RUNS);
+  } catch {
+    return [];
+  }
+}
+
+function saveAnalysisHistory(runs: AnalysisHistoryRun[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    ANALYSIS_HISTORY_STORAGE_KEY,
+    JSON.stringify(runs.slice(0, MAX_HISTORY_RUNS)),
+  );
+}
+
+function createHistoryRun(stocks: ValuationStock[]): AnalysisHistoryRun {
+  const id =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return {
+    id,
+    createdAt: new Date().toISOString(),
+    stocks,
+  };
+}
+
 function App() {
   const [activePage, setActivePage] = useState<Page>("portfolio");
   const [valuations, setValuations] = useState<ValuationStock[]>([]);
   const [selectedTicker, setSelectedTicker] = useState<string>("");
+  const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistoryRun[]>(
+    readAnalysisHistory,
+  );
 
   const selectedStock = useMemo<ValuationStock | null>(
     () =>
@@ -30,7 +108,29 @@ function App() {
   function handleValuationsReady(stocks: ValuationStock[]) {
     setValuations(stocks);
     setSelectedTicker(stocks[0]?.ticker ?? "");
+    if (stocks.length > 0) {
+      const historyRun = createHistoryRun(stocks);
+      setAnalysisHistory((currentHistory) => {
+        const nextHistory = [historyRun, ...currentHistory].slice(
+          0,
+          MAX_HISTORY_RUNS,
+        );
+        saveAnalysisHistory(nextHistory);
+        return nextHistory;
+      });
+    }
     setActivePage("portfolio");
+  }
+
+  function handleLoadHistoryRun(run: AnalysisHistoryRun) {
+    setValuations(run.stocks);
+    setSelectedTicker(run.stocks[0]?.ticker ?? "");
+    setActivePage("portfolio");
+  }
+
+  function handleClearHistory() {
+    saveAnalysisHistory([]);
+    setAnalysisHistory([]);
   }
 
   return (
@@ -70,7 +170,7 @@ function App() {
             <h2>
               {activePage === "portfolio" && "Portfolio valuation output"}
               {activePage === "upload" && "Nordnet CSV intake"}
-              {activePage === "history" && "Historical analysis placeholder"}
+              {activePage === "history" && "Analysis history"}
             </h2>
           </div>
           <div className="notice" role="note">
@@ -115,7 +215,13 @@ function App() {
           <CsvUpload onValuationsReady={handleValuationsReady} />
         )}
 
-        {activePage === "history" && <AnalysisHistory />}
+        {activePage === "history" && (
+          <AnalysisHistory
+            runs={analysisHistory}
+            onLoadRun={handleLoadHistoryRun}
+            onClearHistory={handleClearHistory}
+          />
+        )}
       </section>
     </main>
   );
