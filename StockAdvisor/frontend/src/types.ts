@@ -62,6 +62,20 @@ export type TickerMappingPayload = {
   ticker: string;
 };
 
+export type TickerSearchCandidate = {
+  symbol: string;
+  name: string;
+  exchange: string | null;
+  exchangeDisplay: string | null;
+  quoteType: string | null;
+  typeDisplay: string | null;
+};
+
+export type TickerSearchResponse = {
+  query: string;
+  candidates: TickerSearchCandidate[];
+};
+
 export type ValuationError = {
   name: string;
   ticker?: string;

@@ -1,6 +1,7 @@
 import type {
   MappingResponse,
   TickerMappingPayload,
+  TickerSearchResponse,
   UploadResponse,
   ValuationResponse,
 } from "./types";
@@ -47,6 +48,17 @@ export async function confirmTickerMappings(mappings: TickerMappingPayload[]) {
   });
 
   return parseResponse<MappingResponse>(response);
+}
+
+export async function searchTickers(query: string, currency?: string | null) {
+  const searchParams = new URLSearchParams({ query });
+  if (currency?.trim()) {
+    searchParams.set("currency", currency.trim());
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/ticker-search?${searchParams}`);
+
+  return parseResponse<TickerSearchResponse>(response);
 }
 
 export async function runValuations() {

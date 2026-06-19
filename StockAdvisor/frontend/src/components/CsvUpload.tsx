@@ -1,11 +1,17 @@
-import { FileUp, Play, Save } from "lucide-react";
+import { FileUp, Play, Save, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   confirmTickerMappings,
   runValuations,
+  searchTickers,
   uploadNordnetCsv,
 } from "../api";
-import type { Holding, ValuationError, ValuationStock } from "../types";
+import type {
+  Holding,
+  TickerSearchCandidate,
+  ValuationError,
+  ValuationStock,
+} from "../types";
 import { formatNumber } from "../utils/formatters";
 
 type CsvUploadProps = {
@@ -14,6 +20,18 @@ type CsvUploadProps = {
 
 type LoadState = "idle" | "uploading" | "saving" | "valuating";
 
+type RowSearchState = {
+  isLoading: boolean;
+  candidates: TickerSearchCandidate[];
+  message: string;
+};
+
+function formatCandidateMeta(candidate: TickerSearchCandidate) {
+  return [candidate.exchangeDisplay ?? candidate.exchange, candidate.typeDisplay]
+    .filter(Boolean)
+    .join(" - ");
+}
+
 export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [selectedFileName, setSelectedFileName] = useState("");
@@ -21,10 +39,15 @@ export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
   const [errors, setErrors] = useState<ValuationError[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [filteredOutCount, setFilteredOutCount] = useState(0);
+  const [tickerSearches, setTickerSearches] = useState<Record<number, RowSearchState>>({});
 
   const allMapped = useMemo(
     () => holdings.length > 0 && holdings.every((holding) => holding.ticker?.trim()),
     [holdings],
+  );
+  const searchInProgress = useMemo(
+    () => Object.values(tickerSearches).some((searchState) => searchState.isLoading),
+    [tickerSearches],
   );
 
   async function handleUpload(file: File | null) {
@@ -40,6 +63,7 @@ export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
     try {
       const response = await uploadNordnetCsv(file);
       setHoldings(response.holdings);
+      setTickerSearches({});
       setFilteredOutCount(response.filteredOutCount);
       setStatus(
         `${response.holdings.length} stock holdings imported. Enter or review tickers before valuation.`,
@@ -47,6 +71,7 @@ export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Upload failed.");
       setHoldings([]);
+      setTickerSearches({});
     } finally {
       setLoadState("idle");
     }
@@ -58,6 +83,64 @@ export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
         holdingIndex === index ? { ...holding, ticker } : holding,
       ),
     );
+  }
+
+  function selectTickerCandidate(index: number, candidate: TickerSearchCandidate) {
+    updateTicker(index, candidate.symbol);
+    setTickerSearches((currentSearches) => {
+      const currentSearch = currentSearches[index];
+      if (!currentSearch) {
+        return currentSearches;
+      }
+
+      return {
+        ...currentSearches,
+        [index]: {
+          ...currentSearch,
+          message: `Selected ${candidate.symbol}.`,
+        },
+      };
+    });
+  }
+
+  async function handleTickerSearch(index: number) {
+    const holding = holdings[index];
+    if (!holding) {
+      return;
+    }
+
+    setTickerSearches((currentSearches) => ({
+      ...currentSearches,
+      [index]: {
+        isLoading: true,
+        candidates: [],
+        message: "Searching Yahoo Finance...",
+      },
+    }));
+
+    try {
+      const response = await searchTickers(holding.name, holding.currency);
+      setTickerSearches((currentSearches) => ({
+        ...currentSearches,
+        [index]: {
+          isLoading: false,
+          candidates: response.candidates,
+          message:
+            response.candidates.length > 0
+              ? `${response.candidates.length} candidates found.`
+              : "No candidates found. Enter the ticker manually.",
+        },
+      }));
+    } catch (error) {
+      setTickerSearches((currentSearches) => ({
+        ...currentSearches,
+        [index]: {
+          isLoading: false,
+          candidates: [],
+          message: error instanceof Error ? error.message : "Ticker search failed.",
+        },
+      }));
+    }
   }
 
   async function handleRunValuation() {
@@ -163,22 +246,67 @@ export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
                 </tr>
               </thead>
               <tbody>
-                {holdings.map((holding, index) => (
-                  <tr key={`${holding.name}-${index}`}>
-                    <td>{holding.name}</td>
-                    <td>{holding.currency}</td>
-                    <td>{formatNumber(holding.quantity)}</td>
-                    <td>{formatNumber(holding.current_price)}</td>
-                    <td>
-                      <input
-                        className="ticker-input"
-                        value={holding.ticker ?? ""}
-                        onChange={(event) => updateTicker(index, event.target.value)}
-                        placeholder="e.g. NOVO-B.CO"
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {holdings.map((holding, index) => {
+                  const tickerSearch = tickerSearches[index];
+                  const selectedTicker = holding.ticker?.trim().toUpperCase() ?? "";
+
+                  return (
+                    <tr key={`${holding.name}-${index}`}>
+                      <td>{holding.name}</td>
+                      <td>{holding.currency}</td>
+                      <td>{formatNumber(holding.quantity)}</td>
+                      <td>{formatNumber(holding.current_price)}</td>
+                      <td className="ticker-cell">
+                        <div className="ticker-control">
+                          <input
+                            className="ticker-input"
+                            value={holding.ticker ?? ""}
+                            onChange={(event) => updateTicker(index, event.target.value)}
+                            placeholder="e.g. NOVO-B.CO"
+                          />
+                          <button
+                            className="icon-button"
+                            type="button"
+                            onClick={() => void handleTickerSearch(index)}
+                            disabled={loadState !== "idle" || tickerSearch?.isLoading}
+                            aria-label={`Search yfinance ticker for ${holding.name}`}
+                            title="Search yfinance"
+                          >
+                            <Search size={16} aria-hidden="true" />
+                          </button>
+                        </div>
+
+                        {tickerSearch && (
+                          <div className="ticker-search-results">
+                            <span className="ticker-search-message">
+                              {tickerSearch.message}
+                            </span>
+                            {tickerSearch.candidates.map((candidate) => {
+                              const candidateMeta = formatCandidateMeta(candidate);
+                              const isSelected =
+                                selectedTicker === candidate.symbol.toUpperCase();
+
+                              return (
+                                <button
+                                  className={`ticker-candidate${
+                                    isSelected ? " selected" : ""
+                                  }`}
+                                  key={candidate.symbol}
+                                  type="button"
+                                  onClick={() => selectTickerCandidate(index, candidate)}
+                                >
+                                  <strong>{candidate.symbol}</strong>
+                                  <span>{candidate.name}</span>
+                                  {candidateMeta && <small>{candidateMeta}</small>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -188,7 +316,7 @@ export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
               className="primary-button"
               type="button"
               onClick={() => void handleSaveMappings()}
-              disabled={loadState !== "idle" || !allMapped}
+              disabled={loadState !== "idle" || searchInProgress || !allMapped}
             >
               <Save size={17} aria-hidden="true" />
               <span>Save mappings</span>
@@ -197,7 +325,7 @@ export function CsvUpload({ onValuationsReady }: CsvUploadProps) {
               className="primary-button emphasized"
               type="button"
               onClick={() => void handleRunValuation()}
-              disabled={loadState !== "idle" || !allMapped}
+              disabled={loadState !== "idle" || searchInProgress || !allMapped}
             >
               <Play size={17} aria-hidden="true" />
               <span>Run valuation</span>

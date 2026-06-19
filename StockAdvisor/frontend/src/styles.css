@@ -573,6 +573,85 @@ tbody tr:hover,
   outline: 3px solid rgba(111, 143, 119, 0.18);
 }
 
+.ticker-cell {
+  min-width: 330px;
+  white-space: normal;
+}
+
+.ticker-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ticker-control .ticker-input {
+  width: auto;
+  min-width: 150px;
+  flex: 1 1 180px;
+}
+
+.ticker-search-results {
+  display: grid;
+  gap: 6px;
+  max-width: 420px;
+  margin-top: 8px;
+}
+
+.ticker-search-message {
+  color: #66706a;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ticker-candidate {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 8px;
+  border: 1px solid #dce3d8;
+  border-radius: 8px;
+  background: #fbfcfa;
+  color: #263027;
+  text-align: left;
+}
+
+.ticker-candidate:hover,
+.ticker-candidate.selected {
+  border-color: #7a987e;
+  background: #edf7ef;
+}
+
+.ticker-candidate strong,
+.ticker-candidate span,
+.ticker-candidate small {
+  min-width: 0;
+}
+
+.ticker-candidate strong {
+  color: #203624;
+  font-size: 13px;
+}
+
+.ticker-candidate span,
+.ticker-candidate small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticker-candidate span {
+  font-size: 13px;
+}
+
+.ticker-candidate small {
+  grid-column: 2;
+  color: #66706a;
+  font-size: 12px;
+}
+
 .icon-button,
 .primary-button {
   display: inline-flex;

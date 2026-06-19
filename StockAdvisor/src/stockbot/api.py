@@ -14,6 +14,7 @@ from stockbot.fundamentals.yfinance_provider import (
     YFinanceFundamentalsProvider,
     fundamentals_to_json_payload,
 )
+from stockbot.fundamentals.yfinance_symbol_search import search_yfinance_tickers
 from stockbot.portfolio.nordnet_report_import import load_nordnet_holdings_from_report
 from stockbot.portfolio.ticker_mapping import apply_ticker_mapping
 from stockbot.valuation.parameter_estimator import estimate_valuation_params
@@ -222,6 +223,23 @@ def confirm_ticker_mappings(request: TickerMappingRequest) -> dict[str, Any]:
         "unmappedNames": unmapped_names,
         "mappingPath": str(TICKER_MAPPING_PATH),
     }
+
+
+@app.get("/api/ticker-search")
+def search_tickers(query: str, currency: str | None = None) -> dict[str, Any]:
+    cleaned_query = query.strip()
+    if not cleaned_query:
+        raise HTTPException(status_code=400, detail="Search query is required.")
+
+    try:
+        candidates = search_yfinance_tickers(cleaned_query, currency=currency)
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not search Yahoo Finance tickers: {error}",
+        ) from error
+
+    return {"query": cleaned_query, "candidates": candidates}
 
 
 @app.post("/api/valuations/run")

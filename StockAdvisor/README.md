@@ -17,11 +17,12 @@ Useful endpoints:
 - `GET /api/health`
 - `POST /api/uploads/nordnet`
 - `POST /api/ticker-mappings`
+- `GET /api/ticker-search?query=Novo%20Nordisk&currency=DKK`
 - `POST /api/valuations/run`
 
 Uploading a Nordnet report writes normalized holdings to `data/holdings_raw.json`. Confirming tickers creates or updates `data/ticker_mapping.json` and writes mapped holdings to `data/holdings_mapped.json`. Running valuation fetches fundamentals from yfinance, writes `data/fundamentals.json`, then passes those generated fundamentals into the existing valuation engine.
 
-Manual ticker input is the mapping workflow.
+Ticker mapping can be done manually or by searching Yahoo Finance candidates from yfinance and selecting the preferred ticker.
 
 ## Frontend
 
@@ -41,7 +42,7 @@ Open `http://127.0.0.1:5173`.
 2. Start the frontend.
 3. Upload the Nordnet CSV report.
 4. Review the imported stock holdings.
-5. Enter or edit each yfinance-compatible ticker manually.
+5. Enter each yfinance-compatible ticker manually or use the row search button to pick a Yahoo Finance candidate.
 6. Save mappings or run the valuation. The run generates fundamentals from yfinance.
 7. Review valuation outputs and model parameters in the portfolio view.
 

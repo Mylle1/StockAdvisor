@@ -6,6 +6,7 @@ from typing import Any
 import yfinance as yf
 
 from stockbot.fundamentals.models import Fundamentals
+from stockbot.fundamentals.yfinance_cache import configure_yfinance_cache
 
 
 class YFinanceFundamentalsProvider:
@@ -14,6 +15,7 @@ class YFinanceFundamentalsProvider:
         if not symbol:
             raise ValueError("Ticker is required")
 
+        configure_yfinance_cache()
         stock = yf.Ticker(symbol)
         info = getattr(stock, "info", {}) or {}
         income_statement = stock.financials
